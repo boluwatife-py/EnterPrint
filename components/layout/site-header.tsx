@@ -11,6 +11,12 @@ import {
   MessageCircle,
   User,
   PenLine,
+  LayoutDashboard,
+  Package,
+  MapPin,
+  Settings,
+  ChevronDown,
+  LogOut,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "./logo";
@@ -34,7 +40,15 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth-context";
 import { categories } from "@/lib/data";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -43,7 +57,27 @@ import {
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
-// components/site-header.tsx — only the changed pieces
+
+/** Single source of truth for every dashboard section. */
+const dashboardNav: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/orders", label: "Orders", icon: Package },
+  { href: "/dashboard/messages", label: "Messages", icon: MessageCircle },
+  { href: "/dashboard/addresses", label: "Addresses", icon: MapPin },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+];
+
+/** Utility links shared between desktop icons and the mobile drawer. */
+const utilityNav: { href: string; label: string; icon: LucideIcon }[] = [
+  { href: "/design-request", label: "Request a Design", icon: PenLine },
+  { href: "/track-order", label: "Track an order", icon: Truck },
+  { href: "/contact", label: "Talk to support", icon: MessageCircle },
+];
+
+function isDashboardSectionActive(pathname: string, href: string) {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname.startsWith(href);
+}
 
 function HeaderIconLink({
   href,
@@ -87,11 +121,68 @@ function HeaderIconLink({
   );
 }
 
+/** Desktop "Dashboard" dropdown exposing every account section. */
+function DashboardMenu({ pathname }: { pathname: string }) {
+  const { logout } = useAuth();
+  const active = pathname.startsWith("/dashboard");
+
+  return (
+    <DropdownMenu>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant={active ? "secondary" : "ghost"}
+                  size="sm"
+                  className="gap-1.5"
+                  aria-label="Open dashboard menu"
+                />
+              }
+            />
+          }
+        >
+          <User className="h-5 w-5" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+        </TooltipTrigger>
+        <TooltipContent>Your dashboard</TooltipContent>
+      </Tooltip>
+
+      <DropdownMenuContent align="end" sideOffset={8} className="w-56">
+        <p className="px-1.5 py-1 text-xs font-medium text-muted-foreground">
+          Dashboard
+        </p>
+        {dashboardNav.map((item) => {
+          const Icon = item.icon;
+          return (
+            <DropdownMenuItem
+              key={item.href}
+              render={<Link href={item.href} />}
+              className={cn(
+                isDashboardSectionActive(pathname, item.href) &&
+                  "bg-secondary text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4 text-muted-foreground" />
+              {item.label}
+            </DropdownMenuItem>
+          );
+        })}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={logout}>
+          <LogOut className="h-4 w-4" />
+          Sign out
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 export function SiteHeader() {
   const pathname = usePathname();
   const { itemCount } = useCart();
   const [open, setOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
 
   const packaging = packagingSlugs
     .map((slug) => categories.find((c) => c.slug === slug))
@@ -125,26 +216,16 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-1">
-          <HeaderIconLink
-            href="/dashboard"
-            label="Your dashboard"
-            icon={User}
-            active={pathname === "/dashboard"}
-          />
+          {/* Dashboard dropdown — exposes every account section */}
+          <DashboardMenu pathname={pathname} />
 
-          <HeaderIconLink
-            href="/dashboard/messages"
-            label="Your Messages"
-            icon={MessageCircle}
-            active={pathname.startsWith("/dashboard/messages")}
-          />
           <HeaderIconLink
             href="/track-order"
             label="Track an order"
             icon={Truck}
             active={pathname.startsWith("/track-order")}
           />
-          
+
           {/* Search */}
           <div className="relative hidden sm:block">
             <Popover>
@@ -200,7 +281,7 @@ export function SiteHeader() {
 
           <div className="mx-1 hidden h-6 w-px bg-border md:block" />
 
-          {/* Start an order — icon-only from sm, full button from md up, never just vanishes */}
+          {/* Start an order — icon-only on mobile, full button from md up */}
           <Tooltip>
             <TooltipTrigger
               render={
@@ -216,6 +297,13 @@ export function SiteHeader() {
             <TooltipContent>Start an order</TooltipContent>
           </Tooltip>
 
+          <Button
+            render={<Link href="/products" />}
+            className="hidden md:inline-flex"
+          >
+            Start an order
+          </Button>
+
           {/* Mobile menu */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -230,15 +318,15 @@ export function SiteHeader() {
             >
               <Menu className="h-5 w-5" />
             </SheetTrigger>
-            <SheetContent side="right" className="w-80">
-              <SheetHeader>
+            <SheetContent side="right" className="flex w-80 flex-col p-0">
+              <SheetHeader className="border-b border-border">
                 <SheetTitle className="text-left">
                   <Logo />
                 </SheetTitle>
               </SheetHeader>
 
               <nav
-                className="mt-6 flex flex-col gap-1 px-2"
+                className="flex-1 overflow-y-auto overscroll-contain px-2 py-4"
                 aria-label="Mobile navigation"
               >
                 <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -279,40 +367,64 @@ export function SiteHeader() {
 
                 <div className="my-2 border-t border-border" />
 
-                {[
-                  {
-                    href: "/design-request",
-                    label: "Request a Design",
-                    icon: PenLine,
-                  },
-                  {
-                    href: "/track-order",
-                    label: "Track an order",
-                    icon: Truck,
-                  },
-                  {
-                    href: "/support",
-                    label: "Talk to support",
-                    icon: MessageCircle,
-                  },
-                  { href: "/dashboard", label: "Your dashboard", icon: User },
-                ].map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
-                      pathname === link.href
-                        ? "bg-muted text-foreground"
-                        : "text-muted-foreground",
-                    )}
-                  >
-                    <link.icon className="h-4 w-4" />
-                    {link.label}
-                  </Link>
-                ))}
+                <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Your dashboard
+                </p>
+                {dashboardNav.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
+                        isDashboardSectionActive(pathname, item.href)
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+
+                <div className="my-2 border-t border-border" />
+
+                <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  More
+                </p>
+                {utilityNav.map((link) => {
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
+                        pathname === link.href
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {link.label}
+                    </Link>
+                  );
+                })}
               </nav>
+
+              <div className="border-t border-border p-4">
+                <Button
+                  render={<Link href="/products" />}
+                  onClick={() => setOpen(false)}
+                  className="w-full"
+                >
+                  Start an order
+                </Button>
+              </div>
             </SheetContent>
           </Sheet>
         </div>
