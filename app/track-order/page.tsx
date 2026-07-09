@@ -116,7 +116,7 @@ function TrackOrderContent() {
               reach out to our support team below.
             </p>
             <Button
-              render={<Link href="/support" />}
+              render={<Link href="/contact" />}
               variant="outline"
               size="sm"
               className="mt-2"
@@ -269,7 +269,7 @@ function TrackOrderContent() {
                 Message our support team directly and reference{" "}
                 <span className="font-mono text-foreground">{result.id}</span>.
               </p>
-              <Button render={<Link href="/support" />} size="sm">
+              <Button render={<Link href="/contact" />} size="sm">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 Message support
               </Button>

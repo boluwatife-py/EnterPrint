@@ -45,7 +45,7 @@ export function MessagesBrowser() {
               className="h-9 pl-8 text-sm"
             />
           </div>
-          <Button render={<Link href="/support" />} size="icon" variant="outline" aria-label="Start a new inquiry">
+          <Button render={<Link href="/contact" />} size="icon" variant="outline" aria-label="Start a new inquiry">
             <Plus className="h-4 w-4" />
           </Button>
         </div>

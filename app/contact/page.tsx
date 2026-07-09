@@ -26,7 +26,7 @@ const contactChannels = [
     icon: MessageCircle,
     label: "Live chat",
     value: "Chat with support",
-    href: "/support",
+    href: "/dashboard/messages",
   },
 ];
 
