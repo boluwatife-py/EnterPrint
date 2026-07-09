@@ -164,4 +164,21 @@
   }
 }
 
+/*
+ * Mobile density: rem-based reduction of type, margins, and padding.
+ * Tailwind spacing + font sizes use rem, so lowering the root font-size
+ * proportionally tightens the entire UI on small screens.
+ */
+@media (max-width: 640px) {
+  html {
+    font-size: 90%;
+  }
+}
+
+@media (max-width: 400px) {
+  html {
+    font-size: 87.5%;
+  }
+}
+
 
