@@ -193,8 +193,8 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80">
-      <div className="mx-auto flex h-20 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-3 px-4 sm:h-20 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-4 lg:gap-8">
           <Logo />
           <nav
             className="hidden items-center gap-6 md:flex"
@@ -216,15 +216,19 @@ export function SiteHeader() {
         </div>
 
         <div className="flex items-center gap-1">
-          {/* Dashboard dropdown — exposes every account section */}
-          <DashboardMenu pathname={pathname} />
+          {/* Dashboard dropdown — desktop only; mobile uses the drawer */}
+          <span className="hidden md:inline-flex">
+            <DashboardMenu pathname={pathname} />
+          </span>
 
-          <HeaderIconLink
-            href="/track-order"
-            label="Track an order"
-            icon={Truck}
-            active={pathname.startsWith("/track-order")}
-          />
+          <span className="hidden md:inline-flex">
+            <HeaderIconLink
+              href="/track-order"
+              label="Track an order"
+              icon={Truck}
+              active={pathname.startsWith("/track-order")}
+            />
+          </span>
 
           {/* Search */}
           <div className="relative hidden sm:block">
@@ -281,22 +285,7 @@ export function SiteHeader() {
 
           <div className="mx-1 hidden h-6 w-px bg-border md:block" />
 
-          {/* Start an order — icon-only on mobile, full button from md up */}
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  render={<Link href="/products" aria-label="Start an order" />}
-                  size="icon"
-                  className="md:hidden"
-                />
-              }
-            >
-              <PenLine className="h-5 w-5" />
-            </TooltipTrigger>
-            <TooltipContent>Start an order</TooltipContent>
-          </Tooltip>
-
+          {/* Start an order — full button from md up; mobile uses the drawer CTA */}
           <Button
             render={<Link href="/products" />}
             className="hidden md:inline-flex"
@@ -330,6 +319,31 @@ export function SiteHeader() {
                 aria-label="Mobile navigation"
               >
                 <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Your dashboard
+                </p>
+                {dashboardNav.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
+                        isDashboardSectionActive(pathname, item.href)
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
+
+                <div className="my-2 border-t border-border" />
+
+                <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   Packaging
                 </p>
                 {packaging.map((c) => {
@@ -361,31 +375,6 @@ export function SiteHeader() {
                     >
                       {Icon && <Icon className="h-4 w-4" />}
                       {c!.name}
-                    </Link>
-                  );
-                })}
-
-                <div className="my-2 border-t border-border" />
-
-                <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Your dashboard
-                </p>
-                {dashboardNav.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
-                        isDashboardSectionActive(pathname, item.href)
-                          ? "bg-muted text-foreground"
-                          : "text-muted-foreground",
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
                     </Link>
                   );
                 })}
