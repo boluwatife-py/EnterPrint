@@ -78,18 +78,18 @@ export function SiteFooter() {
             <h3 className="text-sm font-semibold text-foreground">Support</h3>
             <ul className="mt-4 space-y-3">
               {[
-                "Help Center",
-                "Track your order",
-                "Delivery info",
-                "Returns",
-                "Design guidelines",
-              ].map((label) => (
-                <li key={label}>
+                { label: "Help Center", url: "/help-center" },
+                { label: "Track your order", url: "/track-order" },
+                { label: "Delivery info", url: "/delivery-info" },
+                { label: "Returns", url: "/returns" },
+                { label: "Design guidelines", url: "/design-guidelines" },
+              ].map((item) => (
+                <li key={item.label}>
                   <Link
-                    href="/dashboard/messages"
+                    href={item.url}
                     className="text-sm text-muted-foreground transition-colors hover:text-foreground"
                   >
-                    {label}
+                    {item.label}
                   </Link>
                 </li>
               ))}
@@ -104,19 +104,19 @@ export function SiteFooter() {
           </p>
           <div className="flex gap-6">
             <Link
-              href="/"
+              href="/privacy"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Privacy
             </Link>
             <Link
-              href="/"
+              href="/terms"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Terms
             </Link>
             <Link
-              href="/"
+              href="/cookies"
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Cookies
