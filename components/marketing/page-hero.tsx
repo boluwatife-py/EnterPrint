@@ -22,7 +22,7 @@ export function PageHero({
               {eyebrow}
             </p>
           ) : null}
-          <h1 className="mt-3 text-balance font-serif text-4xl leading-[1.05] tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-3 text-balance font-serif text-3xl leading-[1.05] tracking-tight text-foreground sm:text-5xl">
             {title}
           </h1>
           {description ? (

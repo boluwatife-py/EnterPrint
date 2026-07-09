@@ -11,7 +11,7 @@ export function Hero() {
       <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
         {/* ---------- Copy + functional search ---------- */}
         <div className="flex flex-col items-start">
-          <h1 className="font-serif text-5xl leading-[1.05] tracking-tight text-foreground sm:text-6xl">
+          <h1 className="font-serif text-4xl leading-[1.05] tracking-tight text-foreground sm:text-6xl">
             Quality packaging.
             <br />
             Quality prints.

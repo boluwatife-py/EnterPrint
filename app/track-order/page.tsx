@@ -47,7 +47,7 @@ function TrackOrderContent() {
       <section className="border-b border-border bg-card">
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
           <div className="mx-auto max-w-xl text-center">
-            <h1 className="font-serif text-4xl leading-[1.05] tracking-tight text-foreground sm:text-5xl">
+            <h1 className="font-serif text-3xl leading-[1.05] tracking-tight text-foreground sm:text-5xl">
               Track your order
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
