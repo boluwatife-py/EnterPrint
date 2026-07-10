@@ -1,17 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useAuth } from "@/lib/auth-context";
+import {
+  getNotifications,
+  updateNotifications,
+  type NotificationPreferences,
+} from "@/lib/account-api";
+import type { ApiError } from "@/lib/api";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
 type Channel = "email" | "sms";
-type PrefKey =
-  | "orderUpdates"
-  | "proofReady"
-  | "deliveryUpdates"
-  | "messages"
-  | "promotions";
+type PrefKey = keyof NotificationPreferences;
 
 const PREFS: { key: PrefKey; label: string; description: string }[] = [
   {
@@ -41,9 +43,7 @@ const PREFS: { key: PrefKey; label: string; description: string }[] = [
   },
 ];
 
-type PrefState = Record<PrefKey, Record<Channel, boolean>>;
-
-const DEFAULT_STATE: PrefState = {
+const DEFAULT_STATE: NotificationPreferences = {
   orderUpdates: { email: true, sms: true },
   proofReady: { email: true, sms: true },
   deliveryUpdates: { email: true, sms: false },
@@ -52,8 +52,28 @@ const DEFAULT_STATE: PrefState = {
 };
 
 export function NotificationsForm() {
-  const [prefs, setPrefs] = useState<PrefState>(DEFAULT_STATE);
+  const { authFetch } = useAuth();
+  const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_STATE);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getNotifications(authFetch)
+      .then((data) => {
+        if (!cancelled) setPrefs(data);
+      })
+      .catch(() => {
+        // Keep defaults; surface a soft error.
+        if (!cancelled) toast.error("Could not load your preferences.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch]);
 
   function toggle(key: PrefKey, channel: Channel) {
     setPrefs((prev) => ({
@@ -62,13 +82,19 @@ export function NotificationsForm() {
     }));
   }
 
-  function handleSave() {
+  async function handleSave() {
     setSaving(true);
-    // Mock save — replace with a PATCH /api/account/notifications call.
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const saved = await updateNotifications(authFetch, prefs);
+      setPrefs(saved);
       toast.success("Notification preferences saved");
-    }, 500);
+    } catch (error) {
+      toast.error(
+        (error as ApiError)?.message ?? "Could not save preferences.",
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -102,6 +128,7 @@ export function NotificationsForm() {
             <div className="flex justify-center">
               <Checkbox
                 checked={prefs[pref.key].email}
+                disabled={loading}
                 onCheckedChange={() => toggle(pref.key, "email")}
                 aria-label={`${pref.label} via email`}
               />
@@ -109,6 +136,7 @@ export function NotificationsForm() {
             <div className="flex justify-center">
               <Checkbox
                 checked={prefs[pref.key].sms}
+                disabled={loading}
                 onCheckedChange={() => toggle(pref.key, "sms")}
                 aria-label={`${pref.label} via SMS`}
               />
@@ -118,7 +146,7 @@ export function NotificationsForm() {
       </div>
 
       <div className="mt-6 flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={saving || loading}>
           {saving ? "Saving…" : "Save preferences"}
         </Button>
       </div>

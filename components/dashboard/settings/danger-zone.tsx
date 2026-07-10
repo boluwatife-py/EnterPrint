@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { deleteAccount } from "@/lib/account-api";
+import type { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,23 +18,29 @@ import {
 } from "@/components/ui/dialog";
 
 export function DangerZone() {
-  const { user, logout } = useAuth();
+  const { user, authFetch, logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
 
-  const canDelete = confirmText.trim().toLowerCase() === "delete";
+  const canDelete =
+    confirmText.trim() === "DELETE" && password.length > 0 && !deleting;
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!canDelete) return;
     setDeleting(true);
-    // Mock delete — replace with a DELETE /api/account call, then logout.
-    setTimeout(() => {
-      setDeleting(false);
+    try {
+      await deleteAccount(authFetch, { password, confirm: "DELETE" });
+      toast.success("Account deleted");
       setOpen(false);
-      toast.success("Account deletion requested");
-      logout?.();
-    }, 700);
+      await logout?.();
+    } catch (error) {
+      toast.error(
+        (error as ApiError)?.message ?? "Could not delete your account.",
+      );
+      setDeleting(false);
+    }
   }
 
   return (
@@ -65,18 +73,33 @@ export function DangerZone() {
           <DialogHeader>
             <DialogTitle className="font-serif">Delete account</DialogTitle>
             <DialogDescription>
-              This is permanent. Type <strong>delete</strong> to confirm.
+              This is permanent. Enter your password and type{" "}
+              <strong>DELETE</strong> to confirm.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-1.5 py-2">
-            <Label htmlFor="confirm-delete">Confirmation</Label>
-            <Input
-              id="confirm-delete"
-              value={confirmText}
-              onChange={(e) => setConfirmText(e.target.value)}
-              placeholder="delete"
-            />
+          <div className="grid gap-4 py-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="delete-password">Password</Label>
+              <Input
+                id="delete-password"
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="confirm-delete">
+                Type DELETE to confirm
+              </Label>
+              <Input
+                id="confirm-delete"
+                value={confirmText}
+                onChange={(e) => setConfirmText(e.target.value)}
+                placeholder="DELETE"
+              />
+            </div>
           </div>
 
           <DialogFooter>

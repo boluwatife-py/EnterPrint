@@ -1,42 +1,52 @@
 "use client";
 
 import { useState } from "react";
-import { Camera } from "lucide-react";
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
+import { updateProfile } from "@/lib/account-api";
+import type { ApiError } from "@/lib/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export function ProfileForm() {
-  const { user } = useAuth();
+  const { user, authFetch, updateUser } = useAuth();
 
-  const [form, setForm] = useState({
-    name: user?.name ?? "",
-    email: user?.email ?? "",
-    phone: user?.phoneNumber ?? "",
-  });
+  const [name, setName] = useState(user?.name ?? "");
+  const [phone, setPhone] = useState(user?.phoneNumber ?? "");
   const [saving, setSaving] = useState(false);
 
-  const initials = (form.name || "You")
+  const initials = (name || "You")
     .split(" ")
     .map((n) => n[0])
     .slice(0, 2)
     .join("")
     .toUpperCase();
 
-  function update<K extends keyof typeof form>(key: K, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
+  const phoneValid = Boolean(phone) && isValidPhoneNumber(phone);
+  const nameValid = name.trim().length >= 2;
+  const dirty = name !== (user?.name ?? "") || phone !== (user?.phoneNumber ?? "");
+  const canSave = dirty && nameValid && phoneValid && !saving;
 
-  function handleSave() {
+  async function handleSave() {
+    if (!canSave) return;
     setSaving(true);
-    // Mock save — replace with a PATCH /api/account call.
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      const updated = await updateProfile(authFetch, {
+        name: name.trim(),
+        phoneNumber: phone,
+      });
+      updateUser(updated);
       toast.success("Profile updated");
-    }, 600);
+    } catch (error) {
+      const message =
+        (error as ApiError)?.message ?? "Could not update your profile.";
+      toast.error(message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -54,15 +64,6 @@ export function ProfileForm() {
             {initials}
           </AvatarFallback>
         </Avatar>
-        <div>
-          <Button variant="outline" size="sm">
-            <Camera className="mr-2 h-4 w-4" />
-            Change photo
-          </Button>
-          <p className="mt-1.5 text-xs text-muted-foreground">
-            JPG or PNG, up to 2MB.
-          </p>
-        </div>
       </div>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -70,32 +71,60 @@ export function ProfileForm() {
           <Label htmlFor="profile-name">Full name</Label>
           <Input
             id="profile-name"
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
           />
+          {name.length > 0 && !nameValid && (
+            <p className="text-xs text-destructive">
+              Enter at least 2 characters.
+            </p>
+          )}
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="profile-email">Email</Label>
           <Input
             id="profile-email"
             type="email"
-            value={form.email}
-            onChange={(e) => update("email", e.target.value)}
+            value={user?.email ?? ""}
+            readOnly
+            disabled
+            aria-describedby="profile-email-hint"
           />
+          <p id="profile-email-hint" className="text-xs text-muted-foreground">
+            Contact support to change your email.
+          </p>
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="profile-phone">Phone</Label>
-          <Input
+          <PhoneInput
             id="profile-phone"
-            value={form.phone}
-            onChange={(e) => update("phone", e.target.value)}
-            placeholder="+234…"
+            international
+            defaultCountry="NG"
+            placeholder="Enter phone number"
+            value={phone || undefined}
+            onChange={(value) => setPhone(value ?? "")}
+            className={`flex h-9 items-center gap-2 rounded-md border bg-transparent px-3 text-sm text-foreground transition-colors focus-within:ring-2 focus-within:ring-ring/50 ${
+              phone && !phoneValid ? "border-destructive" : "border-border"
+            }`}
+            numberInputProps={{
+              className:
+                "flex-1 min-w-0 bg-transparent outline-none placeholder:text-muted-foreground",
+            }}
+            countrySelectProps={{
+              className:
+                "bg-transparent text-sm text-foreground outline-none border-none pr-1",
+            }}
           />
+          {phone && !phoneValid && (
+            <p className="text-xs text-destructive">
+              Enter a valid phone number.
+            </p>
+          )}
         </div>
       </div>
 
       <div className="mt-6 flex justify-end">
-        <Button onClick={handleSave} disabled={saving}>
+        <Button onClick={handleSave} disabled={!canSave}>
           {saving ? "Saving…" : "Save changes"}
         </Button>
       </div>
