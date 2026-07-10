@@ -1,11 +1,19 @@
 // components/dashboard/addresses-browser.tsx
 "use client";
 
-import { useState } from "react";
-import { MapPin, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Loader2, MapPin, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Address } from "@/lib/mock-addresses";
-import { mockAddresses } from "@/lib/mock-addresses";
+import { useAuth } from "@/lib/auth-context";
+import {
+  createAddress,
+  deleteAddress,
+  listAddresses,
+  updateAddress,
+  type Address,
+  type AddressInput,
+} from "@/lib/account-api";
+import type { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -17,9 +25,28 @@ import {
 import { AddressFormDialog } from "./address-form-dialog";
 
 export function AddressesBrowser() {
-  const [addresses, setAddresses] = useState<Address[]>(mockAddresses);
+  const { authFetch } = useAuth();
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Address | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    listAddresses(authFetch)
+      .then((data) => {
+        if (!cancelled) setAddresses(data);
+      })
+      .catch(() => {
+        if (!cancelled) toast.error("Could not load your addresses.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch]);
 
   function openCreate() {
     setEditing(null);
@@ -31,25 +58,52 @@ export function AddressesBrowser() {
     setDialogOpen(true);
   }
 
-  function handleSave(address: Address) {
+  // Setting an address default unsets the others server-side; mirror that here.
+  function mergeSaved(saved: Address) {
     setAddresses((prev) => {
-      const exists = prev.some((a) => a.id === address.id);
+      const exists = prev.some((a) => a.id === saved.id);
       const next = exists
-        ? prev.map((a) => (a.id === address.id ? address : a))
-        : [...prev, address];
-      return address.isDefault
-        ? next.map((a) => ({ ...a, isDefault: a.id === address.id }))
+        ? prev.map((a) => (a.id === saved.id ? saved : a))
+        : [...prev, saved];
+      return saved.isDefault
+        ? next.map((a) => ({ ...a, isDefault: a.id === saved.id }))
         : next;
     });
-    toast.success(editing ? "Address updated" : "Address added");
   }
 
-  function handleSetDefault(id: string) {
-    setAddresses((prev) => prev.map((a) => ({ ...a, isDefault: a.id === id })));
-    toast.success("Default address updated");
+  async function handleSubmit(input: AddressInput) {
+    try {
+      if (editing) {
+        const saved = await updateAddress(authFetch, editing.id, input);
+        mergeSaved(saved);
+        toast.success("Address updated");
+      } else {
+        const saved = await createAddress(authFetch, input);
+        mergeSaved(saved);
+        toast.success("Address added");
+      }
+    } catch (error) {
+      toast.error((error as ApiError)?.message ?? "Could not save the address.");
+      throw error;
+    }
   }
 
-  function handleDelete(id: string) {
+  async function handleSetDefault(address: Address) {
+    const previous = addresses;
+    setAddresses((prev) =>
+      prev.map((a) => ({ ...a, isDefault: a.id === address.id })),
+    );
+    try {
+      await updateAddress(authFetch, address.id, { isDefault: true });
+      toast.success("Default address updated");
+    } catch (error) {
+      setAddresses(previous);
+      toast.error((error as ApiError)?.message ?? "Could not set default.");
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const previous = addresses;
     setAddresses((prev) => {
       const removed = prev.find((a) => a.id === id);
       const rest = prev.filter((a) => a.id !== id);
@@ -58,7 +112,22 @@ export function AddressesBrowser() {
       }
       return rest;
     });
-    toast.success("Address removed");
+    try {
+      await deleteAddress(authFetch, id);
+      toast.success("Address removed");
+    } catch (error) {
+      setAddresses(previous);
+      toast.error((error as ApiError)?.message ?? "Could not remove address.");
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-16 text-muted-foreground">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Loading addresses…
+      </div>
+    );
   }
 
   return (
@@ -86,7 +155,7 @@ export function AddressesBrowser() {
                     <MapPin className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{address.label}</p>
+                    <p className="text-sm font-medium text-foreground">{address.title}</p>
                     {address.isDefault && (
                       <Badge variant="secondary" className="mt-1">
                         Default
@@ -101,7 +170,7 @@ export function AddressesBrowser() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label={`Actions for ${address.label}`}
+                        aria-label={`Actions for ${address.title}`}
                       />
                     }
                   >
@@ -113,7 +182,7 @@ export function AddressesBrowser() {
                       Edit
                     </DropdownMenuItem>
                     {!address.isDefault && (
-                      <DropdownMenuItem onClick={() => handleSetDefault(address.id)}>
+                      <DropdownMenuItem onClick={() => handleSetDefault(address)}>
                         <Star className="mr-2 h-4 w-4" />
                         Set as default
                       </DropdownMenuItem>
@@ -130,15 +199,11 @@ export function AddressesBrowser() {
               </div>
 
               <div className="text-sm leading-relaxed text-muted-foreground">
-                <p className="font-medium text-foreground">{address.fullName}</p>
-                <p>{address.line1}</p>
-                {address.line2 && <p>{address.line2}</p>}
+                <p>{address.streetAddress}</p>
                 <p>
                   {address.city}, {address.state}
-                  {address.postalCode ? ` ${address.postalCode}` : ""}
                 </p>
                 <p>{address.country}</p>
-                <p className="mt-1">{address.phone}</p>
               </div>
             </div>
           ))}
@@ -162,7 +227,7 @@ export function AddressesBrowser() {
         onOpenChange={setDialogOpen}
         address={editing}
         hasOtherAddresses={addresses.length > 0}
-        onSave={handleSave}
+        onSubmit={handleSubmit}
       />
     </div>
   );

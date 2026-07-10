@@ -53,6 +53,22 @@ type AuthContextValue = {
   resetPassword: (token: string, newPassword: string) => Promise<string>;
   refreshSession: () => Promise<string | null>;
   logout: () => Promise<void>;
+  /** Merge fields into the current user and persist (e.g. after a profile save). */
+  updateUser: (patch: Partial<AuthUser>) => void;
+  /**
+   * Token-injecting fetch for protected routes. Attaches the current access
+   * token and, on a 401, transparently refreshes once and retries before
+   * giving up (which clears the session).
+   */
+  authFetch: <T>(
+    path: string,
+    options?: {
+      method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+      body?: unknown;
+      headers?: Record<string, string>;
+      signal?: AbortSignal;
+    },
+  ) => Promise<T>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -230,6 +246,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const updateUser = useCallback(
+    (patch: Partial<AuthUser>) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, ...patch };
+        if (typeof window !== "undefined") {
+          window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(next));
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
   const refreshSession = useCallback(async () => {
     try {
       const { accessToken: token } = await apiFetch<{ accessToken: string }>(
@@ -247,6 +277,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   }, [persistSession]);
+
+  const authFetch = useCallback(
+    async <T,>(
+      path: string,
+      options: {
+        method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+        body?: unknown;
+        headers?: Record<string, string>;
+        signal?: AbortSignal;
+      } = {},
+    ): Promise<T> => {
+      try {
+        return await apiFetch<T>(path, {
+          ...options,
+          token: accessTokenRef.current,
+        });
+      } catch (error) {
+        const status = (error as { status?: number }).status;
+        if (status !== 401) throw error;
+
+        // Access token likely expired — refresh once, then retry.
+        const token = await refreshSession();
+        if (!token) throw error;
+        return apiFetch<T>(path, { ...options, token });
+      }
+    },
+    [refreshSession],
+  );
 
   const logout = useCallback(async () => {
     try {
@@ -277,9 +335,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       refreshSession,
       logout,
+      updateUser,
+      authFetch,
     }),
     [
       accessToken,
+      authFetch,
       forgotPassword,
       isHydrated,
       login,
@@ -288,6 +349,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       resetPassword,
       signup,
       twoFactorChallenge,
+      updateUser,
       user,
       verifyEmail,
     ],

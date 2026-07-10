@@ -2,12 +2,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
-import type { Address } from "@/lib/mock-addresses";
+import type { Address, AddressInput } from "@/lib/account-api";
+import { NIGERIAN_STATES } from "@/lib/account-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -17,18 +24,20 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 
-type FormState = Omit<Address, "id" | "isDefault">;
+type FormState = {
+  title: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  country: string;
+};
 
 const EMPTY_FORM: FormState = {
-  label: "",
-  fullName: "",
-  phone: "",
-  line1: "",
-  line2: "",
+  title: "",
+  streetAddress: "",
   city: "",
   state: "",
-  postalCode: "",
-  country: "",
+  country: "Nigeria",
 };
 
 export function AddressFormDialog({
@@ -36,56 +45,65 @@ export function AddressFormDialog({
   onOpenChange,
   address,
   hasOtherAddresses,
-  onSave,
+  onSubmit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   address?: Address | null;
   hasOtherAddresses: boolean;
-  onSave: (address: Address) => void;
+  onSubmit: (input: AddressInput) => Promise<void>;
 }) {
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [makeDefault, setMakeDefault] = useState(false);
-  const [phoneTouched, setPhoneTouched] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const isEditing = Boolean(address);
 
   useEffect(() => {
     if (!open) return;
     if (address) {
-      const { id, isDefault, ...rest } = address;
-      setForm(rest);
-      setMakeDefault(isDefault);
+      setForm({
+        title: address.title,
+        streetAddress: address.streetAddress,
+        city: address.city,
+        state: address.state,
+        country: address.country || "Nigeria",
+      });
+      setMakeDefault(address.isDefault);
     } else {
       setForm(EMPTY_FORM);
       setMakeDefault(!hasOtherAddresses);
     }
-    setPhoneTouched(false);
   }, [open, address, hasOtherAddresses]);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  const phoneValid = Boolean(form.phone) && isValidPhoneNumber(form.phone);
-
   const isValid =
-    form.label.trim() &&
-    form.fullName.trim() &&
-    phoneValid &&
-    form.line1.trim() &&
+    form.title.trim() &&
+    form.streetAddress.trim() &&
     form.city.trim() &&
     form.state.trim() &&
     form.country.trim();
 
-  function handleSubmit() {
-    if (!isValid) return;
-    onSave({
-      id: address?.id ?? crypto.randomUUID(),
-      isDefault: address?.isDefault ? true : makeDefault,
-      ...form,
-    });
-    onOpenChange(false);
+  async function handleSubmit() {
+    if (!isValid || saving) return;
+    setSaving(true);
+    try {
+      await onSubmit({
+        title: form.title.trim(),
+        streetAddress: form.streetAddress.trim(),
+        city: form.city.trim(),
+        state: form.state,
+        country: form.country.trim() || "Nigeria",
+        // A default address can't be un-defaulted here; keep it default.
+        isDefault: address?.isDefault ? true : makeDefault,
+      });
+      onOpenChange(false);
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -104,63 +122,22 @@ export function AddressFormDialog({
 
         <div className="grid gap-4 py-2">
           <div className="grid gap-1.5">
-            <Label htmlFor="addr-label">Label</Label>
+            <Label htmlFor="addr-title">Label</Label>
             <Input
-              id="addr-label"
+              id="addr-title"
               placeholder="Home, Office…"
-              value={form.label}
-              onChange={(e) => update("label", e.target.value)}
+              value={form.title}
+              onChange={(e) => update("title", e.target.value)}
             />
           </div>
 
           <div className="grid gap-1.5">
-            <Label htmlFor="addr-name">Full name</Label>
+            <Label htmlFor="addr-street">Street address</Label>
             <Input
-              id="addr-name"
-              placeholder="Who should we address it to?"
-              value={form.fullName}
-              onChange={(e) => update("fullName", e.target.value)}
-            />
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="addr-phone">Phone</Label>
-            <PhoneInput
-              id="addr-phone"
-              international
-              defaultCountry="NG"
-              placeholder="Enter phone number"
-              value={form.phone || undefined}
-              onChange={(value) => update("phone", value ?? "")}
-              onBlur={() => setPhoneTouched(true)}
-              className={`flex h-9 items-center gap-2 rounded-md border bg-transparent outline-0 focus:outline-0  px-3 text-sm text-foreground transition-colors focus-within:ring-2 focus-within:ring-ring/50 ${
-                phoneTouched && form.phone && !phoneValid
-                  ? "border-destructive"
-                  : "border-border"
-              }`}
-              numberInputProps={{
-                className:
-                  "flex-1 min-w-0 bg-transparent outline-none placeholder:text-muted-foreground",
-              }}
-              countrySelectProps={{
-                className:
-                  "bg-transparent text-sm text-foreground outline-none border-none pr-1",
-              }}
-            />
-            {phoneTouched && form.phone && !phoneValid && (
-              <p className="text-xs text-destructive">
-                Enter a valid phone number.
-              </p>
-            )}
-          </div>
-
-          <div className="grid gap-1.5">
-            <Label htmlFor="addr-line1">Address line 1</Label>
-            <Input
-              id="addr-line1"
-              placeholder="Street address"
-              value={form.line1}
-              onChange={(e) => update("line1", e.target.value)}
+              id="addr-street"
+              placeholder="14 Awolowo Road, Flat 3B"
+              value={form.streetAddress}
+              onChange={(e) => update("streetAddress", e.target.value)}
             />
           </div>
 
@@ -176,12 +153,21 @@ export function AddressFormDialog({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="addr-state">State</Label>
-              <Input
-                id="addr-state"
-                placeholder="State"
-                value={form.state}
-                onChange={(e) => update("state", e.target.value)}
-              />
+              <Select
+                value={form.state || undefined}
+                onValueChange={(value) => update("state", value ?? "")}
+              >
+                <SelectTrigger id="addr-state">
+                  <SelectValue placeholder="Select state" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NIGERIAN_STATES.map((state) => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -211,8 +197,12 @@ export function AddressFormDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button disabled={!isValid} onClick={handleSubmit}>
-            {isEditing ? "Save changes" : "Add address"}
+          <Button disabled={!isValid || saving} onClick={handleSubmit}>
+            {saving
+              ? "Saving…"
+              : isEditing
+                ? "Save changes"
+                : "Add address"}
           </Button>
         </DialogFooter>
       </DialogContent>
