@@ -1,0 +1,3245 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "ENTERPRINT API", "version": "0.1.0" },
+  "paths": {
+    "/v1/auth/signup": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Signup",
+        "operationId": "signup_v1_auth_signup_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SignupRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SignupResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Login",
+        "operationId": "login_v1_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    { "$ref": "#/components/schemas/LoginResponse" },
+                    {
+                      "$ref": "#/components/schemas/RequiresEmailVerification"
+                    },
+                    { "$ref": "#/components/schemas/Requires2FA" }
+                  ],
+                  "title": "Response Login V1 Auth Login Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/verify-email": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Verify Email",
+        "operationId": "verify_email_v1_auth_verify_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VerifyEmailRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/2fa-challenge": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Two Fa Challenge",
+        "operationId": "two_fa_challenge_v1_auth_2fa_challenge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TwoFAChallengeRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/forgot-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Forgot Password",
+        "operationId": "forgot_password_v1_auth_forgot_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ForgotPasswordRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/reset-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Reset Password",
+        "operationId": "reset_password_v1_auth_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ResetPasswordRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/refresh": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Refresh",
+        "operationId": "refresh_v1_auth_refresh_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RefreshResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/auth/logout": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Logout",
+        "operationId": "logout_v1_auth_logout_post",
+        "responses": { "204": { "description": "Successful Response" } }
+      }
+    },
+    "/v1/account/me": {
+      "get": {
+        "tags": ["Account & Settings"],
+        "summary": "Get Me",
+        "operationId": "get_me_v1_account_me_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserOut" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account/profile": {
+      "patch": {
+        "tags": ["Account & Settings"],
+        "summary": "Update Profile",
+        "operationId": "update_profile_v1_account_profile_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProfileUpdateRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserOut" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account/password": {
+      "patch": {
+        "tags": ["Account & Settings"],
+        "summary": "Change Password",
+        "operationId": "change_password_v1_account_password_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasswordChangeRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account/2fa/enable": {
+      "post": {
+        "tags": ["Account & Settings"],
+        "summary": "Enable 2Fa",
+        "operationId": "enable_2fa_v1_account_2fa_enable_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TwoFAEnableResponse" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account/2fa/confirm": {
+      "post": {
+        "tags": ["Account & Settings"],
+        "summary": "Confirm 2Fa",
+        "operationId": "confirm_2fa_v1_account_2fa_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TwoFACodeRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TwoFAStatusResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account/2fa/disable": {
+      "post": {
+        "tags": ["Account & Settings"],
+        "summary": "Disable 2Fa",
+        "operationId": "disable_2fa_v1_account_2fa_disable_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TwoFACodeRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TwoFAStatusResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account/notifications": {
+      "get": {
+        "tags": ["Account & Settings"],
+        "summary": "Get Notifications",
+        "operationId": "get_notifications_v1_account_notifications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesSchema"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      },
+      "patch": {
+        "tags": ["Account & Settings"],
+        "summary": "Update Notifications",
+        "operationId": "update_notifications_v1_account_notifications_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferencesSchema"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferencesSchema"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/account": {
+      "delete": {
+        "tags": ["Account & Settings"],
+        "summary": "Delete Account",
+        "operationId": "delete_account_v1_account_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeleteAccountRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/addresses": {
+      "get": {
+        "tags": ["Addresses"],
+        "summary": "List Addresses",
+        "operationId": "list_addresses_v1_addresses_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": { "$ref": "#/components/schemas/AddressOut" },
+                  "type": "array",
+                  "title": "Response List Addresses V1 Addresses Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      },
+      "post": {
+        "tags": ["Addresses"],
+        "summary": "Create Address",
+        "operationId": "create_address_v1_addresses_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AddressCreate" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AddressOut" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/addresses/{address_id}": {
+      "put": {
+        "tags": ["Addresses"],
+        "summary": "Update Address",
+        "operationId": "update_address_v1_addresses__address_id__put",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "address_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Address Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AddressUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AddressOut" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Addresses"],
+        "summary": "Delete Address",
+        "operationId": "delete_address_v1_addresses__address_id__delete",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "address_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Address Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/categories": {
+      "get": {
+        "tags": ["Catalog"],
+        "summary": "List Categories",
+        "operationId": "list_categories_v1_categories_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryListResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Catalog"],
+        "summary": "Create Category",
+        "operationId": "create_category_v1_categories_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CategoryCreate" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CategoryResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/categories/{category_id}": {
+      "patch": {
+        "tags": ["Catalog"],
+        "summary": "Update Category",
+        "operationId": "update_category_v1_categories__category_id__patch",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Category Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CategoryUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CategoryResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Catalog"],
+        "summary": "Delete Category",
+        "description": "Soft-deletes the category (see `CatalogService.delete_category`).",
+        "operationId": "delete_category_v1_categories__category_id__delete",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "category_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Category Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/products": {
+      "get": {
+        "tags": ["Catalog"],
+        "summary": "List Products",
+        "operationId": "list_products_v1_products_get",
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Category"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "popular",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+              "title": "Popular"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Pagesize"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductListResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Catalog"],
+        "summary": "Create Product",
+        "operationId": "create_product_v1_products_post",
+        "security": [{ "HTTPBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductCreate" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/products/{slug}": {
+      "get": {
+        "tags": ["Catalog"],
+        "summary": "Get Product",
+        "operationId": "get_product_v1_products__slug__get",
+        "parameters": [
+          {
+            "name": "slug",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Slug" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/products/{product_id}": {
+      "patch": {
+        "tags": ["Catalog"],
+        "summary": "Update Product",
+        "operationId": "update_product_v1_products__product_id__patch",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Product Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductUpdate" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProductResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Catalog"],
+        "summary": "Delete Product",
+        "description": "Soft-deletes the product (see `CatalogService.delete_product`).",
+        "operationId": "delete_product_v1_products__product_id__delete",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "product_id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Product Id" }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Successful Response" },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/pricing/quote": {
+      "post": {
+        "tags": ["Catalog"],
+        "summary": "Get Pricing Quote",
+        "operationId": "get_pricing_quote_v1_pricing_quote_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuoteRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/QuoteResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/uploads/image": {
+      "post": {
+        "tags": ["Uploads"],
+        "summary": "Upload Image",
+        "operationId": "upload_image_v1_uploads_image_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_image_v1_uploads_image_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ImageUploadResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/uploads/artwork": {
+      "post": {
+        "tags": ["Uploads"],
+        "summary": "Upload Artwork",
+        "operationId": "upload_artwork_v1_uploads_artwork_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_artwork_v1_uploads_artwork_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/uploads/attachments": {
+      "post": {
+        "tags": ["Uploads"],
+        "summary": "Upload Attachments",
+        "description": "Chat/thread attachments. Deliberately separate from /image (admin-only,\nstrict image allowlist) and /artwork (checkout-only, unauthenticated,\nhardcodes kind=\"file\") -- this one needs to work for both customers and\nadmins, needs real image/video/file kind detection, and persists a row\nper file (via UploadService) so a later POST /threads/:id/messages call\nwith `attachmentIds` can resolve those ids back to real, owned metadata\ninstead of trusting whatever the client sends.\n\nRate limited slightly looser than /artwork (15/min vs 5/min): this is\nmeant to be used repeatedly through the course of a conversation, not\nonce at checkout.",
+        "operationId": "upload_attachments_v1_uploads_attachments_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_attachments_v1_uploads_attachments_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AttachmentUploadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/v1/orders": {
+      "get": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Get Orders",
+        "operationId": "get_orders_v1_orders_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "title": "Pagesize"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedOrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Place Order",
+        "description": "Rate limited: each call creates a DB row AND starts a live Paystack\ntransaction (a real API call, with a real cost/quota on Paystack's\nside) -- this is the checkout endpoint, not something a legitimate\nclient should be hitting in a tight loop.",
+        "operationId": "place_order_v1_orders_post",
+        "security": [{ "HTTPBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateOrderRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/verify-payment": {
+      "get": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Verify Payment",
+        "description": "Called by the frontend checkout confirmation screen (step 12) after\nPaystack redirects back with `?reference=`. Doesn't just read back\nwhatever's in the DB -- if the order is still PENDING_PAYMENT, this\nasks Paystack directly rather than assuming the webhook already landed.\n\nRate limited: this is a one-shot reconciliation call that hits Paystack\non our behalf, not the polling endpoint -- see /{id}/payment-status for\nthat. 10/minute is generous for \"called once when the page loads\" and\nstill caps how many Paystack verify calls a single client can trigger.",
+        "operationId": "verify_payment_v1_orders_verify_payment_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "reference",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string", "title": "Reference" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}": {
+      "get": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Get Order By Id",
+        "operationId": "get_order_by_id_v1_orders__id__get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/payment-status": {
+      "get": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Get Payment Status",
+        "description": "The polling endpoint the confirmation page hits on a timer while an\norder is PENDING_PAYMENT. Pure local DB read -- no Paystack call, so\nit's cheap enough to poll every few seconds. That's also exactly why it\nneeds its own (higher) rate limit: unlike the rest of this router, this\none is *expected* to be called repeatedly by the same client in a short\nwindow, so the limit exists to catch a runaway/misbehaving poll loop\n(e.g. an interval that never got cleared) rather than normal usage.",
+        "operationId": "get_payment_status_v1_orders__id__payment_status_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaymentStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/reorder": {
+      "post": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Reorder Items",
+        "description": "Rate limited: internally calls create_new_order, so it carries the\nsame cost (DB write + live Paystack transaction) as POST /orders.",
+        "operationId": "reorder_items_v1_orders__id__reorder_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ReorderResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/cancel": {
+      "post": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Cancel Order",
+        "operationId": "cancel_order_v1_orders__id__cancel_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelOrderRequest",
+                "default": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/proof": {
+      "get": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Get Order Proof",
+        "operationId": "get_order_proof_v1_orders__id__proof_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProofResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/proof/approve": {
+      "post": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Approve Order Proof",
+        "operationId": "approve_order_proof_v1_orders__id__proof_approve_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/proof/reject": {
+      "post": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Reject Order Proof",
+        "operationId": "reject_order_proof_v1_orders__id__proof_reject_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProofRejectRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtworkStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/orders/{id}/status": {
+      "patch": {
+        "tags": ["Orders & Checkout"],
+        "summary": "Admin Update Order",
+        "operationId": "admin_update_order_v1_orders__id__status_patch",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminUpdateOrderStatusRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/OrderSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/threads": {
+      "get": {
+        "tags": ["Messages"],
+        "summary": "List Threads",
+        "operationId": "list_threads_v1_threads_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 20,
+              "title": "Pagesize"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PaginatedThreadResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/threads/{id}": {
+      "get": {
+        "tags": ["Messages"],
+        "summary": "Get Thread",
+        "operationId": "get_thread_v1_threads__id__get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThreadSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/threads/{id}/messages": {
+      "post": {
+        "tags": ["Messages"],
+        "summary": "Send Message",
+        "description": "Rate limited (30/min): a real DB write plus a websocket broadcast to\neveryone connected to the thread. Higher than the order-mutation\nendpoints (20/min) since this is meant to be used repeatedly through an\nongoing conversation, but still capped against a scripted flood.\n\nReturns the full thread (not just the new message) so the client sees\nits own message land -- with server-assigned id/timestamp/resolved\nattachments -- without a second round trip.",
+        "operationId": "send_message_v1_threads__id__messages_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SendMessageRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ThreadSchema" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/threads/{id}/read": {
+      "post": {
+        "tags": ["Messages"],
+        "summary": "Mark Thread Read",
+        "operationId": "mark_thread_read_v1_threads__id__read_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "title": "Id" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MarkReadResponse" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/payments/webhooks/paystack": {
+      "post": {
+        "tags": ["Payments"],
+        "summary": "Paystack Webhook",
+        "operationId": "paystack_webhook_v1_payments_webhooks_paystack_post",
+        "parameters": [
+          {
+            "name": "x-paystack-signature",
+            "in": "header",
+            "required": false,
+            "schema": { "type": "string", "title": "X-Paystack-Signature" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/track": {
+      "post": {
+        "tags": ["Tracking"],
+        "summary": "Track Order",
+        "description": "No auth -- this is the public order-lookup form. Rate limited harder\nthan most GETs in this app on purpose: it's an unauthenticated\nid+email lookup, i.e. exactly the shape of an enumeration/brute-force\ntarget (guess order ids against a known email, or vice versa). 10/min\nper client is enough for a real customer checking their own order a\nfew times, not enough for a scripted sweep.",
+        "operationId": "track_order_v1_track_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TrackOrderRequest" }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackedOrderResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/design-requests": {
+      "post": {
+        "tags": ["Design Requests"],
+        "summary": "Create Design Request",
+        "description": "No auth -- a public lead-gen form, same category as /track and the\nPaystack webhook in terms of being reachable by anyone. Rate limited\ntighter than most public endpoints (5/min) since this writes a DB row\nand fires a notification task on every call with no ownership check\nat all -- the cheapest form on the site to spam.",
+        "operationId": "create_design_request_v1_design_requests_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDesignRequestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DesignRequestResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": { "application/json": { "schema": {} } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AddressCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Title",
+            "examples": ["Home"]
+          },
+          "streetAddress": { "type": "string", "title": "Streetaddress" },
+          "city": { "type": "string", "title": "City" },
+          "state": { "type": "string", "title": "State" },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "default": "Nigeria"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "title": "Isdefault",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": ["title", "streetAddress", "city", "state"],
+        "title": "AddressCreate"
+      },
+      "AddressOut": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Title",
+            "examples": ["Home"]
+          },
+          "streetAddress": { "type": "string", "title": "Streetaddress" },
+          "city": { "type": "string", "title": "City" },
+          "state": { "type": "string", "title": "State" },
+          "country": {
+            "type": "string",
+            "title": "Country",
+            "default": "Nigeria"
+          },
+          "isDefault": {
+            "type": "boolean",
+            "title": "Isdefault",
+            "default": false
+          },
+          "id": { "type": "string", "title": "Id" }
+        },
+        "type": "object",
+        "required": ["title", "streetAddress", "city", "state", "id"],
+        "title": "AddressOut"
+      },
+      "AddressUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              { "type": "string", "maxLength": 50, "minLength": 1 },
+              { "type": "null" }
+            ],
+            "title": "Title"
+          },
+          "streetAddress": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Streetaddress"
+          },
+          "city": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "City"
+          },
+          "state": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "State"
+          },
+          "country": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Country"
+          },
+          "isDefault": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Isdefault"
+          }
+        },
+        "type": "object",
+        "title": "AddressUpdate"
+      },
+      "AdminUpdateOrderStatusRequest": {
+        "properties": {
+          "status": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Status"
+          },
+          "artworkStatus": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Artworkstatus"
+          }
+        },
+        "type": "object",
+        "title": "AdminUpdateOrderStatusRequest"
+      },
+      "ArtworkFileResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "name": { "type": "string", "title": "Name" },
+          "url": { "type": "string", "title": "Url" },
+          "kind": { "type": "string", "title": "Kind" },
+          "size": { "type": "string", "title": "Size" }
+        },
+        "type": "object",
+        "required": ["id", "name", "url", "kind", "size"],
+        "title": "ArtworkFileResponse"
+      },
+      "ArtworkInfo": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["upload", "design", "none"],
+            "title": "Type"
+          },
+          "fileIds": {
+            "anyOf": [
+              { "items": { "type": "string" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Fileids"
+          },
+          "brief": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Brief"
+          }
+        },
+        "type": "object",
+        "required": ["type"],
+        "title": "ArtworkInfo"
+      },
+      "ArtworkStatusResponse": {
+        "properties": {
+          "artworkStatus": { "type": "string", "title": "Artworkstatus" }
+        },
+        "type": "object",
+        "required": ["artworkStatus"],
+        "title": "ArtworkStatusResponse"
+      },
+      "ArtworkUploadResponse": {
+        "properties": {
+          "files": {
+            "items": { "$ref": "#/components/schemas/ArtworkFileResponse" },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": ["files"],
+        "title": "ArtworkUploadResponse"
+      },
+      "AttachmentResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "name": { "type": "string", "title": "Name" },
+          "url": { "type": "string", "title": "Url" },
+          "kind": {
+            "type": "string",
+            "enum": ["image", "video", "file"],
+            "title": "Kind"
+          },
+          "size": { "type": "string", "title": "Size" }
+        },
+        "type": "object",
+        "required": ["id", "name", "url", "kind", "size"],
+        "title": "AttachmentResponse",
+        "description": "Response shape for POST /uploads/attachments -- used for chat\nmessage attachments. `kind` is a real Literal (not a plain str like\nArtworkFileResponse's) since it's derived server-side from the actual\ncontent-type rather than hardcoded, and downstream (thread messages)\ndepends on it being exactly image|video|file."
+      },
+      "AttachmentSchema": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "name": { "type": "string", "title": "Name" },
+          "url": { "type": "string", "title": "Url" },
+          "kind": {
+            "type": "string",
+            "enum": ["image", "video", "file"],
+            "title": "Kind"
+          },
+          "size": { "type": "string", "title": "Size" }
+        },
+        "type": "object",
+        "required": ["id", "name", "url", "kind", "size"],
+        "title": "AttachmentSchema",
+        "description": "Same shape as uploads.schemas.AttachmentResponse -- duplicated here\nrather than imported so the threads app doesn't take on a hard schema\ndependency on uploads; the two are allowed to drift independently if\neither side's response shape needs to change later."
+      },
+      "AttachmentUploadResponse": {
+        "properties": {
+          "files": {
+            "items": { "$ref": "#/components/schemas/AttachmentResponse" },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": ["files"],
+        "title": "AttachmentUploadResponse"
+      },
+      "Body_upload_artwork_v1_uploads_artwork_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": ["files"],
+        "title": "Body_upload_artwork_v1_uploads_artwork_post"
+      },
+      "Body_upload_attachments_v1_uploads_attachments_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "contentMediaType": "application/octet-stream"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": ["files"],
+        "title": "Body_upload_attachments_v1_uploads_attachments_post"
+      },
+      "Body_upload_image_v1_uploads_image_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          }
+        },
+        "type": "object",
+        "required": ["file"],
+        "title": "Body_upload_image_v1_uploads_image_post"
+      },
+      "CancelOrderRequest": {
+        "properties": {
+          "reason": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "title": "CancelOrderRequest"
+      },
+      "CategoryCreate": {
+        "properties": {
+          "slug": { "type": "string", "title": "Slug" },
+          "name": { "type": "string", "title": "Name" },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image"
+          },
+          "icon": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Icon"
+          }
+        },
+        "type": "object",
+        "required": ["slug", "name"],
+        "title": "CategoryCreate"
+      },
+      "CategoryListResponse": {
+        "properties": {
+          "data": {
+            "items": { "$ref": "#/components/schemas/CategoryResponse" },
+            "type": "array",
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": ["data"],
+        "title": "CategoryListResponse"
+      },
+      "CategoryResponse": {
+        "properties": {
+          "slug": { "type": "string", "title": "Slug" },
+          "name": { "type": "string", "title": "Name" },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image"
+          },
+          "icon": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Icon"
+          }
+        },
+        "type": "object",
+        "required": ["slug", "name"],
+        "title": "CategoryResponse"
+      },
+      "CategoryUpdate": {
+        "properties": {
+          "slug": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Slug"
+          },
+          "name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image"
+          },
+          "icon": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Icon"
+          },
+          "is_active": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "CategoryUpdate",
+        "description": "PATCH payload for a category. Every field is optional; the service\nlayer only touches fields the caller actually sent\n(`model_dump(exclude_unset=True)`), so omitted fields are left alone\nrather than reset to `None`."
+      },
+      "CreateDesignRequestRequest": {
+        "properties": {
+          "name": { "type": "string", "minLength": 2, "title": "Name" },
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "company": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Company"
+          },
+          "phone": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phone"
+          },
+          "projectType": { "type": "string", "title": "Projecttype" },
+          "budget": {
+            "type": "string",
+            "enum": ["under-50k", "50-150k", "150-500k", "over-500k"],
+            "title": "Budget"
+          },
+          "brief": { "type": "string", "minLength": 10, "title": "Brief" }
+        },
+        "type": "object",
+        "required": ["name", "email", "projectType", "budget", "brief"],
+        "title": "CreateDesignRequestRequest"
+      },
+      "CreateOrderRequest": {
+        "properties": {
+          "items": {
+            "items": { "$ref": "#/components/schemas/OrderItemInput" },
+            "type": "array",
+            "minItems": 1,
+            "title": "Items"
+          },
+          "deliveryAddressId": {
+            "type": "string",
+            "title": "Deliveryaddressid"
+          },
+          "deliveryMethod": {
+            "type": "string",
+            "enum": ["standard", "express"],
+            "title": "Deliverymethod",
+            "default": "standard"
+          }
+        },
+        "type": "object",
+        "required": ["items", "deliveryAddressId"],
+        "title": "CreateOrderRequest"
+      },
+      "DeleteAccountRequest": {
+        "properties": {
+          "password": { "type": "string", "title": "Password" },
+          "confirm": { "type": "string", "title": "Confirm" }
+        },
+        "type": "object",
+        "required": ["password", "confirm"],
+        "title": "DeleteAccountRequest"
+      },
+      "DesignRequestResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Design request submitted. Our team will reach out within 24 hours."
+          }
+        },
+        "type": "object",
+        "required": ["id"],
+        "title": "DesignRequestResponse"
+      },
+      "ForgotPasswordRequest": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" }
+        },
+        "type": "object",
+        "required": ["email"],
+        "title": "ForgotPasswordRequest"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": { "$ref": "#/components/schemas/ValidationError" },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImageUploadResponse": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "maxLength": 2083,
+            "minLength": 1,
+            "format": "uri",
+            "title": "Url"
+          }
+        },
+        "type": "object",
+        "required": ["url"],
+        "title": "ImageUploadResponse"
+      },
+      "LoginRequest": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "password": { "type": "string", "title": "Password" }
+        },
+        "type": "object",
+        "required": ["email", "password"],
+        "title": "LoginRequest"
+      },
+      "LoginResponse": {
+        "properties": {
+          "user": { "$ref": "#/components/schemas/UserOut" },
+          "accessToken": { "type": "string", "title": "Accesstoken" }
+        },
+        "type": "object",
+        "required": ["user", "accessToken"],
+        "title": "LoginResponse",
+        "description": "The token pair sent back to the client, omitting the refresh token \nsince it lives in an HttpOnly cookie."
+      },
+      "MarkReadResponse": {
+        "properties": {
+          "unreadCount": { "type": "integer", "title": "Unreadcount" }
+        },
+        "type": "object",
+        "required": ["unreadCount"],
+        "title": "MarkReadResponse"
+      },
+      "MessageResponse": {
+        "properties": { "message": { "type": "string", "title": "Message" } },
+        "type": "object",
+        "required": ["message"],
+        "title": "MessageResponse"
+      },
+      "MessageSchema": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "authorType": {
+            "type": "string",
+            "enum": ["customer", "admin", "system"],
+            "title": "Authortype"
+          },
+          "authorId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Authorid"
+          },
+          "body": { "type": "string", "title": "Body" },
+          "attachments": {
+            "items": { "$ref": "#/components/schemas/AttachmentSchema" },
+            "type": "array",
+            "title": "Attachments",
+            "default": []
+          },
+          "createdAt": { "type": "string", "title": "Createdat" }
+        },
+        "type": "object",
+        "required": ["id", "authorType", "body", "createdAt"],
+        "title": "MessageSchema"
+      },
+      "NotificationChannelPreference": {
+        "properties": {
+          "email": { "type": "boolean", "title": "Email" },
+          "sms": { "type": "boolean", "title": "Sms" }
+        },
+        "type": "object",
+        "required": ["email", "sms"],
+        "title": "NotificationChannelPreference"
+      },
+      "NotificationPreferencesSchema": {
+        "properties": {
+          "orderUpdates": {
+            "$ref": "#/components/schemas/NotificationChannelPreference"
+          },
+          "proofReady": {
+            "$ref": "#/components/schemas/NotificationChannelPreference"
+          },
+          "deliveryUpdates": {
+            "$ref": "#/components/schemas/NotificationChannelPreference"
+          },
+          "messages": {
+            "$ref": "#/components/schemas/NotificationChannelPreference"
+          },
+          "promotions": {
+            "$ref": "#/components/schemas/NotificationChannelPreference"
+          }
+        },
+        "type": "object",
+        "required": [
+          "orderUpdates",
+          "proofReady",
+          "deliveryUpdates",
+          "messages",
+          "promotions"
+        ],
+        "title": "NotificationPreferencesSchema"
+      },
+      "OptionGroupCreate": {
+        "properties": {
+          "label": { "type": "string", "title": "Label" },
+          "values": {
+            "items": { "$ref": "#/components/schemas/OptionValueCreate" },
+            "type": "array",
+            "title": "Values"
+          }
+        },
+        "type": "object",
+        "required": ["label", "values"],
+        "title": "OptionGroupCreate",
+        "description": "Write-side option group, used both on product create and on the\n`options` field of a product update (a full-replace, not a merge)."
+      },
+      "OptionGroupResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "label": { "type": "string", "title": "Label" },
+          "values": {
+            "items": { "$ref": "#/components/schemas/OptionValue" },
+            "type": "array",
+            "title": "Values",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": ["id", "label"],
+        "title": "OptionGroupResponse",
+        "description": "Read-side view of a `ProductOptionGroup`. The `id` is derived from\n`label` via `slugify` rather than read off the ORM row, since the ORM's\nown `id` is just an opaque DB uuid that the frontend never sees."
+      },
+      "OptionValue": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "label": { "type": "string", "title": "Label" },
+          "priceMultiplier": {
+            "type": "number",
+            "title": "Pricemultiplier",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": ["id", "label"],
+        "title": "OptionValue",
+        "description": "A single selectable value within an option group, e.g. {\"id\": \"small\",\n\"label\": \"Small\", \"priceMultiplier\": 1.0}."
+      },
+      "OptionValueCreate": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "label": { "type": "string", "title": "Label" },
+          "priceMultiplier": {
+            "type": "number",
+            "title": "Pricemultiplier",
+            "default": 1.0
+          }
+        },
+        "type": "object",
+        "required": ["id", "label"],
+        "title": "OptionValueCreate",
+        "description": "Write-side option value. Unlike `OptionValue`, `id` is caller-supplied\n(it's the key used in POST /pricing/quote's `options` dict), so it must\nstay unique within its parent group — enforced by\n`OptionGroupCreate.unique_value_ids`."
+      },
+      "OrderItemInput": {
+        "properties": {
+          "productSlug": { "type": "string", "title": "Productslug" },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options",
+            "default": {}
+          },
+          "quantity": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Quantity"
+          },
+          "artwork": { "$ref": "#/components/schemas/ArtworkInfo" }
+        },
+        "type": "object",
+        "required": ["productSlug", "quantity", "artwork"],
+        "title": "OrderItemInput"
+      },
+      "OrderItemSchema": {
+        "properties": {
+          "productSlug": { "type": "string", "title": "Productslug" },
+          "name": { "type": "string", "title": "Name" },
+          "image": { "type": "string", "title": "Image" },
+          "options": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Options"
+          },
+          "quantity": { "type": "integer", "title": "Quantity" },
+          "unitPrice": { "type": "integer", "title": "Unitprice" }
+        },
+        "type": "object",
+        "required": [
+          "productSlug",
+          "name",
+          "image",
+          "options",
+          "quantity",
+          "unitPrice"
+        ],
+        "title": "OrderItemSchema"
+      },
+      "OrderSchema": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "createdAt": {
+            "type": "string",
+            "title": "Createdat",
+            "description": "ISO 8601 Date YYYY-MM-DD"
+          },
+          "status": { "type": "string", "title": "Status" },
+          "artworkStatus": { "type": "string", "title": "Artworkstatus" },
+          "items": {
+            "items": { "$ref": "#/components/schemas/OrderItemSchema" },
+            "type": "array",
+            "title": "Items"
+          },
+          "subtotal": { "type": "integer", "title": "Subtotal" },
+          "delivery": { "type": "integer", "title": "Delivery" },
+          "total": { "type": "integer", "title": "Total" },
+          "deliveryAddress": { "type": "string", "title": "Deliveryaddress" },
+          "estimatedDelivery": {
+            "type": "string",
+            "title": "Estimateddelivery"
+          },
+          "tracking": {
+            "items": { "$ref": "#/components/schemas/TrackingEventSchema" },
+            "type": "array",
+            "title": "Tracking"
+          },
+          "paymentUrl": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Paymenturl"
+          },
+          "threadId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Threadid"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "createdAt",
+          "status",
+          "artworkStatus",
+          "items",
+          "subtotal",
+          "delivery",
+          "total",
+          "deliveryAddress",
+          "estimatedDelivery",
+          "tracking"
+        ],
+        "title": "OrderSchema"
+      },
+      "PaginatedOrderResponse": {
+        "properties": {
+          "data": {
+            "items": { "$ref": "#/components/schemas/OrderSchema" },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": { "type": "integer", "title": "Page" },
+          "pageSize": { "type": "integer", "title": "Pagesize" },
+          "total": { "type": "integer", "title": "Total" }
+        },
+        "type": "object",
+        "required": ["data", "page", "pageSize", "total"],
+        "title": "PaginatedOrderResponse"
+      },
+      "PaginatedThreadResponse": {
+        "properties": {
+          "data": {
+            "items": { "$ref": "#/components/schemas/ThreadSummarySchema" },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": { "type": "integer", "title": "Page" },
+          "pageSize": { "type": "integer", "title": "Pagesize" },
+          "total": { "type": "integer", "title": "Total" }
+        },
+        "type": "object",
+        "required": ["data", "page", "pageSize", "total"],
+        "title": "PaginatedThreadResponse"
+      },
+      "PasswordChangeRequest": {
+        "properties": {
+          "currentPassword": { "type": "string", "title": "Currentpassword" },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Newpassword"
+          },
+          "confirmPassword": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Confirmpassword"
+          }
+        },
+        "type": "object",
+        "required": ["currentPassword", "newPassword", "confirmPassword"],
+        "title": "PasswordChangeRequest"
+      },
+      "PaymentStatusResponse": {
+        "properties": {
+          "status": { "type": "string", "title": "Status" },
+          "isFinal": {
+            "type": "boolean",
+            "title": "Isfinal",
+            "description": "True once status is no longer 'Pending Payment' -- tells the client to stop polling."
+          }
+        },
+        "type": "object",
+        "required": ["status", "isFinal"],
+        "title": "PaymentStatusResponse",
+        "description": "Deliberately minimal -- the frontend polls GET /orders/{id}/payment-status\non the confirmation page and just needs to know whether to keep waiting.\nThis is NOT the reconciliation call (that's still /orders/verify-payment,\nmeant to be hit once since it talks to Paystack) -- this one only ever\nreads local DB state, which is what makes it safe to poll frequently."
+      },
+      "ProductCreate": {
+        "properties": {
+          "slug": { "type": "string", "title": "Slug" },
+          "name": { "type": "string", "title": "Name" },
+          "categorySlug": { "type": "string", "title": "Categoryslug" },
+          "tagline": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Tagline"
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image"
+          },
+          "basePrice": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Baseprice"
+          },
+          "turnaroundDays": {
+            "type": "integer",
+            "title": "Turnarounddays",
+            "default": 7
+          },
+          "tags": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "features": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Features",
+            "default": []
+          },
+          "popular": {
+            "type": "boolean",
+            "title": "Popular",
+            "default": false
+          },
+          "options": {
+            "items": { "$ref": "#/components/schemas/OptionGroupCreate" },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          },
+          "quantityTiers": {
+            "items": { "$ref": "#/components/schemas/QuantityTierCreate" },
+            "type": "array",
+            "title": "Quantitytiers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": ["slug", "name", "categorySlug", "basePrice"],
+        "title": "ProductCreate"
+      },
+      "ProductListResponse": {
+        "properties": {
+          "data": {
+            "items": { "$ref": "#/components/schemas/ProductResponse" },
+            "type": "array",
+            "title": "Data"
+          },
+          "page": { "type": "integer", "title": "Page" },
+          "pageSize": { "type": "integer", "title": "Pagesize" },
+          "total": { "type": "integer", "title": "Total" }
+        },
+        "type": "object",
+        "required": ["data", "page", "pageSize", "total"],
+        "title": "ProductListResponse"
+      },
+      "ProductResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "slug": { "type": "string", "title": "Slug" },
+          "name": { "type": "string", "title": "Name" },
+          "categorySlug": { "type": "string", "title": "Categoryslug" },
+          "tagline": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Tagline"
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image"
+          },
+          "basePrice": { "type": "integer", "title": "Baseprice" },
+          "rating": { "type": "number", "title": "Rating" },
+          "reviews": { "type": "integer", "title": "Reviews" },
+          "tags": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          },
+          "popular": { "type": "boolean", "title": "Popular" },
+          "turnaroundDays": { "type": "integer", "title": "Turnarounddays" },
+          "features": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Features",
+            "default": []
+          },
+          "options": {
+            "items": { "$ref": "#/components/schemas/OptionGroupResponse" },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          },
+          "quantityTiers": {
+            "items": { "$ref": "#/components/schemas/QuantityTierResponse" },
+            "type": "array",
+            "title": "Quantitytiers",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "categorySlug",
+          "basePrice",
+          "rating",
+          "reviews",
+          "popular",
+          "turnaroundDays"
+        ],
+        "title": "ProductResponse"
+      },
+      "ProductUpdate": {
+        "properties": {
+          "slug": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Slug"
+          },
+          "name": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Name"
+          },
+          "categorySlug": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Categoryslug"
+          },
+          "tagline": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Tagline"
+          },
+          "description": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Description"
+          },
+          "image": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Image"
+          },
+          "basePrice": {
+            "anyOf": [
+              { "type": "integer", "minimum": 0.0 },
+              { "type": "null" }
+            ],
+            "title": "Baseprice"
+          },
+          "turnaroundDays": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Turnarounddays"
+          },
+          "tags": {
+            "anyOf": [
+              { "items": { "type": "string" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Tags"
+          },
+          "features": {
+            "anyOf": [
+              { "items": { "type": "string" }, "type": "array" },
+              { "type": "null" }
+            ],
+            "title": "Features"
+          },
+          "popular": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Popular"
+          },
+          "options": {
+            "anyOf": [
+              {
+                "items": { "$ref": "#/components/schemas/OptionGroupCreate" },
+                "type": "array"
+              },
+              { "type": "null" }
+            ],
+            "title": "Options"
+          },
+          "quantityTiers": {
+            "anyOf": [
+              {
+                "items": { "$ref": "#/components/schemas/QuantityTierCreate" },
+                "type": "array"
+              },
+              { "type": "null" }
+            ],
+            "title": "Quantitytiers"
+          },
+          "is_active": {
+            "anyOf": [{ "type": "boolean" }, { "type": "null" }],
+            "title": "Is Active"
+          }
+        },
+        "type": "object",
+        "title": "ProductUpdate",
+        "description": "PATCH payload for a product. Every field is optional and only\nfields explicitly sent by the caller are applied\n(`model_dump(exclude_unset=True)`).\n\n`options` and `quantityTiers`, when sent, are treated as a full\nreplacement of the product's existing groups/tiers rather than a merge —\nmatching how they're supplied wholesale on create."
+      },
+      "ProfileUpdateRequest": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              { "type": "string", "maxLength": 120, "minLength": 2 },
+              { "type": "null" }
+            ],
+            "title": "Name"
+          },
+          "phoneNumber": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Phonenumber"
+          }
+        },
+        "type": "object",
+        "title": "ProfileUpdateRequest"
+      },
+      "ProofRejectRequest": {
+        "properties": { "reason": { "type": "string", "title": "Reason" } },
+        "type": "object",
+        "required": ["reason"],
+        "title": "ProofRejectRequest"
+      },
+      "ProofResponse": {
+        "properties": {
+          "status": { "type": "string", "title": "Status" },
+          "url": { "type": "string", "title": "Url" },
+          "version": { "type": "integer", "title": "Version" },
+          "notes": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": ["status", "url", "version"],
+        "title": "ProofResponse"
+      },
+      "QuantityTierCreate": {
+        "properties": {
+          "qty": { "type": "integer", "exclusiveMinimum": 0.0, "title": "Qty" },
+          "unitPrice": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Unitprice"
+          }
+        },
+        "type": "object",
+        "required": ["qty", "unitPrice"],
+        "title": "QuantityTierCreate"
+      },
+      "QuantityTierResponse": {
+        "properties": {
+          "qty": { "type": "integer", "title": "Qty" },
+          "unitPrice": { "type": "integer", "title": "Unitprice" }
+        },
+        "type": "object",
+        "required": ["qty", "unitPrice"],
+        "title": "QuantityTierResponse"
+      },
+      "QuoteRequest": {
+        "properties": {
+          "productSlug": { "type": "string", "title": "Productslug" },
+          "quantity": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Quantity"
+          },
+          "options": {
+            "additionalProperties": { "type": "string" },
+            "type": "object",
+            "title": "Options",
+            "default": {}
+          }
+        },
+        "type": "object",
+        "required": ["productSlug", "quantity"],
+        "title": "QuoteRequest",
+        "description": "Body for POST /pricing/quote. `options` maps an option-group's\nslugified label (e.g. \"print-finish\") to the chosen value's `id`."
+      },
+      "QuoteResponse": {
+        "properties": {
+          "unitPrice": { "type": "integer", "title": "Unitprice" },
+          "quantity": { "type": "integer", "title": "Quantity" },
+          "subtotal": { "type": "integer", "title": "Subtotal" },
+          "currency": { "type": "string", "title": "Currency" }
+        },
+        "type": "object",
+        "required": ["unitPrice", "quantity", "subtotal", "currency"],
+        "title": "QuoteResponse"
+      },
+      "RefreshResponse": {
+        "properties": {
+          "accessToken": { "type": "string", "title": "Accesstoken" }
+        },
+        "type": "object",
+        "required": ["accessToken"],
+        "title": "RefreshResponse",
+        "description": "The refresh token itself is no longer echoed here — it lives only in\nthe HttpOnly cookie the router sets/reads directly."
+      },
+      "ReorderResponse": {
+        "properties": {
+          "addedItems": { "type": "integer", "title": "Addeditems" }
+        },
+        "type": "object",
+        "required": ["addedItems"],
+        "title": "ReorderResponse"
+      },
+      "Requires2FA": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "REQUIRES_2FA",
+            "title": "Status",
+            "default": "REQUIRES_2FA"
+          },
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "challengeId": { "type": "string", "title": "Challengeid" }
+        },
+        "type": "object",
+        "required": ["email", "challengeId"],
+        "title": "Requires2FA"
+      },
+      "RequiresEmailVerification": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "REQUIRES_EMAIL_VERIFICATION",
+            "title": "Status",
+            "default": "REQUIRES_EMAIL_VERIFICATION"
+          },
+          "email": { "type": "string", "format": "email", "title": "Email" }
+        },
+        "type": "object",
+        "required": ["email"],
+        "title": "RequiresEmailVerification"
+      },
+      "ResetPasswordRequest": {
+        "properties": {
+          "token": { "type": "string", "title": "Token" },
+          "newPassword": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Newpassword"
+          }
+        },
+        "type": "object",
+        "required": ["token", "newPassword"],
+        "title": "ResetPasswordRequest"
+      },
+      "SendMessageRequest": {
+        "properties": {
+          "body": { "type": "string", "minLength": 1, "title": "Body" },
+          "attachmentIds": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Attachmentids",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": ["body"],
+        "title": "SendMessageRequest"
+      },
+      "SignupRequest": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 120,
+            "minLength": 2,
+            "title": "Name"
+          },
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "phoneNumber": { "type": "string", "title": "Phonenumber" },
+          "password": { "type": "string", "minLength": 8, "title": "Password" },
+          "confirmPassword": {
+            "type": "string",
+            "minLength": 8,
+            "title": "Confirmpassword"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "email",
+          "phoneNumber",
+          "password",
+          "confirmPassword"
+        ],
+        "title": "SignupRequest",
+        "description": "Matches the frontend signup form: fullname, email, phone, password +\nconfirm password. No company, no role."
+      },
+      "SignupResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "REQUIRES_EMAIL_VERIFICATION",
+            "title": "Status",
+            "default": "REQUIRES_EMAIL_VERIFICATION"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": "Account created. Verification email sent."
+          },
+          "email": { "type": "string", "format": "email", "title": "Email" }
+        },
+        "type": "object",
+        "required": ["email"],
+        "title": "SignupResponse"
+      },
+      "ThreadSchema": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "orderId": { "type": "string", "title": "Orderid" },
+          "customerId": { "type": "string", "title": "Customerid" },
+          "agentId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Agentid"
+          },
+          "agentRole": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Agentrole"
+          },
+          "unreadCount": { "type": "integer", "title": "Unreadcount" },
+          "messages": {
+            "items": { "$ref": "#/components/schemas/MessageSchema" },
+            "type": "array",
+            "title": "Messages"
+          },
+          "createdAt": { "type": "string", "title": "Createdat" },
+          "updatedAt": { "type": "string", "title": "Updatedat" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "customerId",
+          "unreadCount",
+          "messages",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ThreadSchema",
+        "description": "Full thread -- backs GET /threads/:id, POST /threads, and the\nresponse of POST /threads/:id/messages (returns the whole thread so the\nclient doesn't need a second round trip to see its own message land)."
+      },
+      "ThreadSummarySchema": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "orderId": { "type": "string", "title": "Orderid" },
+          "customerId": { "type": "string", "title": "Customerid" },
+          "agentId": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Agentid"
+          },
+          "agentRole": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Agentrole"
+          },
+          "unreadCount": { "type": "integer", "title": "Unreadcount" },
+          "lastMessage": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/MessageSchema" },
+              { "type": "null" }
+            ]
+          },
+          "createdAt": { "type": "string", "title": "Createdat" },
+          "updatedAt": { "type": "string", "title": "Updatedat" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "orderId",
+          "customerId",
+          "unreadCount",
+          "createdAt",
+          "updatedAt"
+        ],
+        "title": "ThreadSummarySchema",
+        "description": "Backs GET /threads (the inbox list view). Carries only the last\nmessage as a preview instead of full history -- the list view doesn't\nneed it, and loading every message for every thread on every page of\nthe inbox would be needlessly expensive."
+      },
+      "TrackOrderRequest": {
+        "properties": {
+          "orderId": { "type": "string", "title": "Orderid" },
+          "email": { "type": "string", "format": "email", "title": "Email" }
+        },
+        "type": "object",
+        "required": ["orderId", "email"],
+        "title": "TrackOrderRequest"
+      },
+      "TrackedItemSchema": {
+        "properties": {
+          "name": { "type": "string", "title": "Name" },
+          "quantity": { "type": "integer", "title": "Quantity" }
+        },
+        "type": "object",
+        "required": ["name", "quantity"],
+        "title": "TrackedItemSchema"
+      },
+      "TrackedOrderResponse": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "status": { "type": "string", "title": "Status" },
+          "createdAt": { "type": "string", "title": "Createdat" },
+          "estimatedDelivery": {
+            "type": "string",
+            "title": "Estimateddelivery"
+          },
+          "courier": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Courier"
+          },
+          "trackingNumber": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Trackingnumber"
+          },
+          "destination": { "type": "string", "title": "Destination" },
+          "items": {
+            "items": { "$ref": "#/components/schemas/TrackedItemSchema" },
+            "type": "array",
+            "title": "Items"
+          },
+          "updates": {
+            "items": { "$ref": "#/components/schemas/TrackingUpdateSchema" },
+            "type": "array",
+            "title": "Updates"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "estimatedDelivery",
+          "destination",
+          "items",
+          "updates"
+        ],
+        "title": "TrackedOrderResponse"
+      },
+      "TrackingEventSchema": {
+        "properties": {
+          "label": { "type": "string", "title": "Label" },
+          "location": { "type": "string", "title": "Location" },
+          "date": { "type": "string", "title": "Date" },
+          "done": { "type": "boolean", "title": "Done" }
+        },
+        "type": "object",
+        "required": ["label", "location", "date", "done"],
+        "title": "TrackingEventSchema"
+      },
+      "TrackingMediaSchema": {
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": ["image", "video"],
+            "title": "Kind"
+          },
+          "url": { "type": "string", "title": "Url" },
+          "caption": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Caption"
+          }
+        },
+        "type": "object",
+        "required": ["kind", "url"],
+        "title": "TrackingMediaSchema"
+      },
+      "TrackingUpdateSchema": {
+        "properties": {
+          "stage": { "type": "string", "title": "Stage" },
+          "timestamp": { "type": "string", "title": "Timestamp" },
+          "note": { "type": "string", "title": "Note" },
+          "media": {
+            "items": { "$ref": "#/components/schemas/TrackingMediaSchema" },
+            "type": "array",
+            "title": "Media",
+            "default": []
+          }
+        },
+        "type": "object",
+        "required": ["stage", "timestamp", "note"],
+        "title": "TrackingUpdateSchema"
+      },
+      "TwoFAChallengeRequest": {
+        "properties": {
+          "challengeId": { "type": "string", "title": "Challengeid" },
+          "code": { "type": "string", "title": "Code" }
+        },
+        "type": "object",
+        "required": ["challengeId", "code"],
+        "title": "TwoFAChallengeRequest"
+      },
+      "TwoFACodeRequest": {
+        "properties": { "code": { "type": "string", "title": "Code" } },
+        "type": "object",
+        "required": ["code"],
+        "title": "TwoFACodeRequest"
+      },
+      "TwoFAEnableResponse": {
+        "properties": {
+          "otpauthUrl": { "type": "string", "title": "Otpauthurl" },
+          "secret": { "type": "string", "title": "Secret" }
+        },
+        "type": "object",
+        "required": ["otpauthUrl", "secret"],
+        "title": "TwoFAEnableResponse"
+      },
+      "TwoFAStatusResponse": {
+        "properties": {
+          "requires2FA": { "type": "boolean", "title": "Requires2Fa" }
+        },
+        "type": "object",
+        "required": ["requires2FA"],
+        "title": "TwoFAStatusResponse"
+      },
+      "UserOut": {
+        "properties": {
+          "id": { "type": "string", "title": "Id" },
+          "name": { "type": "string", "title": "Name" },
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "phoneNumber": { "type": "string", "title": "Phonenumber" },
+          "initials": { "type": "string", "title": "Initials" },
+          "emailVerified": { "type": "boolean", "title": "Emailverified" },
+          "requires2FA": { "type": "boolean", "title": "Requires2Fa" }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "email",
+          "phoneNumber",
+          "initials",
+          "emailVerified",
+          "requires2FA"
+        ],
+        "title": "UserOut"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": { "anyOf": [{ "type": "string" }, { "type": "integer" }] },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": { "type": "string", "title": "Message" },
+          "type": { "type": "string", "title": "Error Type" },
+          "input": { "title": "Input" },
+          "ctx": { "type": "object", "title": "Context" }
+        },
+        "type": "object",
+        "required": ["loc", "msg", "type"],
+        "title": "ValidationError"
+      },
+      "VerifyEmailRequest": {
+        "properties": {
+          "email": { "type": "string", "format": "email", "title": "Email" },
+          "code": { "type": "string", "title": "Code" }
+        },
+        "type": "object",
+        "required": ["email", "code"],
+        "title": "VerifyEmailRequest"
+      }
+    },
+    "securitySchemes": { "HTTPBearer": { "type": "http", "scheme": "bearer" } }
+  }
+}
