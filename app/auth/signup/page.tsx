@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import PhoneInput from "react-phone-number-input/input";
-import "react-phone-number-input/style.css";
+import PhoneInput from "react-phone-number-input";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -17,12 +16,11 @@ export default function SignupPage() {
   const router = useRouter();
   const { signup } = useAuth();
   const [form, setForm] = useState({
-    name: "Ayo Johnson",
-    email: "ayo@northstarprints.com",
-    company: "",
+    name: "",
+    email: "",
     phoneNumber: "",
-    password: "Password123!",
-    confirmPassword: "Password123!",
+    password: "",
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,9 +52,9 @@ export default function SignupPage() {
       await signup({
         name: form.name,
         email: form.email,
-        company: form.company,
         phoneNumber: form.phoneNumber,
         password: form.password,
+        confirmPassword: form.confirmPassword,
       });
     } catch (submitError) {
       const redirectPath = getAuthRedirectPath(submitError);
@@ -129,14 +127,22 @@ export default function SignupPage() {
           <Label htmlFor="phone">Phone number</Label>
           <PhoneInput
             id="phone"
-            country="US"
-            className="w-full"
-            value={form.phoneNumber}
-            onChange={(value) =>
-              setForm((current) => ({ ...current, phoneNumber: value || "" }))
-            }
+            international
+            defaultCountry="NG"
             placeholder="Enter phone number"
-            required
+            value={form.phoneNumber || undefined}
+            onChange={(value) =>
+              setForm((current) => ({ ...current, phoneNumber: value ?? "" }))
+            }
+            className="flex h-9 items-center gap-2 rounded-lg border border-input bg-transparent px-3 text-sm text-foreground transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
+            numberInputProps={{
+              className:
+                "flex-1 min-w-0 bg-transparent outline-none placeholder:text-muted-foreground",
+            }}
+            countrySelectProps={{
+              className:
+                "bg-transparent text-sm text-foreground outline-none border-none pr-1",
+            }}
           />
         </div>
 
@@ -168,6 +174,10 @@ export default function SignupPage() {
               )}
             </button>
           </div>
+          <p className="text-xs text-muted-foreground">
+            Use at least 8 characters with an uppercase letter, a lowercase
+            letter, a number, and a symbol.
+          </p>
         </div>
 
         <div className="space-y-2">

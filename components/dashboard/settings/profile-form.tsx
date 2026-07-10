@@ -15,8 +15,7 @@ export function ProfileForm() {
   const [form, setForm] = useState({
     name: user?.name ?? "",
     email: user?.email ?? "",
-    phone: user?.phone ?? "",
-    company: user?.company ?? "",
+    phone: user?.phoneNumber ?? "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -91,15 +90,6 @@ export function ProfileForm() {
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
             placeholder="+234…"
-          />
-        </div>
-        <div className="grid gap-1.5">
-          <Label htmlFor="profile-company">Company (optional)</Label>
-          <Input
-            id="profile-company"
-            value={form.company}
-            onChange={(e) => update("company", e.target.value)}
-            placeholder="Business name"
           />
         </div>
       </div>
