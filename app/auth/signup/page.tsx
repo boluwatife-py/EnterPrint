@@ -134,7 +134,7 @@ export default function SignupPage() {
             onChange={(value) =>
               setForm((current) => ({ ...current, phoneNumber: value ?? "" }))
             }
-            className="flex h-9 items-center gap-2 rounded-lg border border-input bg-transparent px-3 text-sm text-foreground transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
+            className="flex h-9 items-center gap-2 rounded-xs border border-input bg-transparent px-3 text-sm text-foreground transition-colors focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50"
             numberInputProps={{
               className:
                 "flex-1 min-w-0 bg-transparent outline-none placeholder:text-muted-foreground",

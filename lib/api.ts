@@ -6,7 +6,7 @@
 
 export const API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://hugely-meet-ferret.ngrok-free.app/v1"
+  "http://localhost:8000/v1"
 ).replace(/\/+$/, "");
 
 export type ApiError = Error & {

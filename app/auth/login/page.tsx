@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { getAuthRedirectPath } from "@/lib/auth-errors";
+import { toast } from "sonner";
 
 function LoginPageContent() {
   const router = useRouter();
@@ -21,7 +22,6 @@ function LoginPageContent() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const redirectTo = searchParams.get("redirect") ?? "/dashboard";
   const message = searchParams.get("message");
@@ -37,10 +37,16 @@ function LoginPageContent() {
     }
   }, [redirectTo, router]);
 
+  useEffect(() => {
+    if (message) {
+      toast.success(message);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message]);
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setError(null);
 
     try {
       await login(form.email, form.password);
@@ -52,7 +58,7 @@ function LoginPageContent() {
         return;
       }
 
-      setError(
+      toast.error(
         submitError instanceof Error
           ? submitError.message
           : "Unable to sign you in right now.",
@@ -79,18 +85,6 @@ function LoginPageContent() {
       }
     >
       <form className="space-y-4" onSubmit={handleSubmit}>
-        {message ? (
-          <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {message}
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-            {error}
-          </div>
-        ) : null}
-
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input

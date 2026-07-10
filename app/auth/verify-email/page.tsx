@@ -6,10 +6,16 @@ import { useEffect, useState } from "react";
 import { Mail } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import { useAuth } from "@/lib/auth-context";
 import { readPendingEmail, clearPendingEmail } from "@/lib/auth-errors";
+
+const CODE_LENGTH = 6;
 
 export default function VerifyEmailPage() {
   const router = useRouter();
@@ -23,8 +29,7 @@ export default function VerifyEmailPage() {
     setEmail(readPendingEmail());
   }, []);
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function submitCode(value: string) {
     if (!email) {
       setError("We couldn't find the email to verify. Please sign in again.");
       return;
@@ -34,7 +39,7 @@ export default function VerifyEmailPage() {
     setError(null);
 
     try {
-      await verifyEmail(email, code);
+      await verifyEmail(email, value);
       clearPendingEmail();
       router.replace("/dashboard");
     } catch (submitError) {
@@ -46,6 +51,11 @@ export default function VerifyEmailPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await submitCode(code);
   }
 
   return (
@@ -68,7 +78,7 @@ export default function VerifyEmailPage() {
         className="space-y-5 rounded-xl border border-border/70 bg-background/70 p-6"
         onSubmit={handleSubmit}
       >
-        <div className="flex items-center justify-center rounded-full bg-muted p-3 text-foreground">
+        <div className="flex items-center justify-center rounded-full p-3 text-foreground">
           <Mail className="h-5 w-5" />
         </div>
 
@@ -85,19 +95,34 @@ export default function VerifyEmailPage() {
         ) : null}
 
         <div className="space-y-2">
-          <Label htmlFor="code">Verification code</Label>
-          <Input
-            id="code"
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            placeholder="Enter 6-digit code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            required
-          />
+          <div className="flex justify-center">
+            <InputOTP
+              id="code"
+              maxLength={CODE_LENGTH}
+              value={code}
+              onChange={(value) => {
+                setCode(value);
+                if (error) setError(null);
+                if (value.length === CODE_LENGTH) {
+                  void submitCode(value);
+                }
+              }}
+              disabled={loading}
+            >
+              <InputOTPGroup>
+                {Array.from({ length: CODE_LENGTH }).map((_, index) => (
+                  <InputOTPSlot key={index} index={index} className="py-5 px-5" />
+                ))}
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
         </div>
 
-        <Button type="submit" className="w-full py-4.5" disabled={loading}>
+        <Button
+          type="submit"
+          className="w-full py-4.5"
+          disabled={loading || code.length !== CODE_LENGTH}
+        >
           {loading ? "Verifying…" : "Verify email"}
         </Button>
       </form>
