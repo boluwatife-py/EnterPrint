@@ -16,8 +16,8 @@ function LoginPageContent() {
   const searchParams = useSearchParams();
   const { login } = useAuth();
   const [form, setForm] = useState({
-    email: "amara@brightleafco.com",
-    password: "Password123!",
+    email: "",
+    password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -65,7 +65,7 @@ function LoginPageContent() {
   return (
     <AuthShell
       title="Sign in to your account"
-      description="Use the demo account to preview the dashboard experience instantly."
+      description="Welcome back. Enter your details to access your dashboard."
       footer={
         <p className="text-sm text-muted-foreground">
           New here?{" "}

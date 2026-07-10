@@ -15,8 +15,8 @@ function ResetPasswordPageContent() {
   const searchParams = useSearchParams();
   const { resetPassword } = useAuth();
   const [form, setForm] = useState({
-    password: "Password123!",
-    confirmPassword: "Password123!",
+    password: "",
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

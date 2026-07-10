@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -10,9 +9,8 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
   const { forgotPassword } = useAuth();
-  const [email, setEmail] = useState("amara@brightleafco.com");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -24,9 +22,10 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const token = await forgotPassword(email);
-      router.replace(
-        `/reset-password?email=${encodeURIComponent(email)}&token=${token}`,
+      const responseMessage = await forgotPassword(email);
+      setMessage(
+        responseMessage ||
+          "If that account exists, a reset link is on its way to your inbox.",
       );
     } catch (submitError) {
       setError(
@@ -42,7 +41,7 @@ export default function ForgotPasswordPage() {
   return (
     <AuthShell
       title="Reset your password"
-      description="Enter the email tied to your account and we’ll send you a secure demo reset link."
+      description="Enter the email tied to your account and we’ll send you a secure reset link."
       footer={
         <p className="text-sm text-muted-foreground">
           Remembered it?{" "}

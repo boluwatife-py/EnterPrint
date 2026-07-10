@@ -213,7 +213,7 @@ export default function DashboardPage() {
                 <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
               </div>
             </div>
-            {user?.company && <p className="mt-3 text-xs text-muted-foreground">{user.company}</p>}
+            {user?.phoneNumber && <p className="mt-3 text-xs text-muted-foreground">{user.phoneNumber}</p>}
             <Button render={<Link href="/dashboard/settings" />} variant="outline" size="sm" className="mt-4 w-full">
               Edit profile
             </Button>

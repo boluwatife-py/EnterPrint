@@ -6,230 +6,175 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { mockUser } from "@/lib/mock-account";
-import { createAuthFlowError, persistPendingEmail } from "@/lib/auth-errors";
+import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
+import {
+  createAuthFlowError,
+  persistChallengeId,
+  persistPendingEmail,
+} from "@/lib/auth-errors";
 
-type AuthUser = {
+export type AuthUser = {
   id: string;
   name: string;
   email: string;
-  company: string;
-  phoneNumber?: string;
+  phoneNumber: string;
   initials: string;
-  role: string;
   emailVerified: boolean;
   requires2FA: boolean;
 };
 
-type MockAccount = AuthUser & {
-  password: string;
-};
+type LoginSuccess = { user: AuthUser; accessToken: string };
+type LoginInterrupt =
+  | { status: "REQUIRES_EMAIL_VERIFICATION"; email: string }
+  | { status: "REQUIRES_2FA"; email: string; challengeId: string };
+type LoginResult = LoginSuccess | LoginInterrupt;
 
 type AuthContextValue = {
   user: AuthUser | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isHydrated: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (values: {
     name: string;
     email: string;
-    company?: string;
-    phoneNumber?: string;
+    phoneNumber: string;
     password: string;
+    confirmPassword: string;
   }) => Promise<void>;
+  verifyEmail: (email: string, code: string) => Promise<void>;
+  twoFactorChallenge: (challengeId: string, code: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<string>;
-  resetPassword: (token: string, newPassword: string) => Promise<void>;
-  refreshSession: () => Promise<void>;
-  logout: () => void;
+  resetPassword: (token: string, newPassword: string) => Promise<string>;
+  refreshSession: () => Promise<string | null>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 const USER_STORAGE_KEY = "enterprint-auth-user";
 const ACCESS_TOKEN_STORAGE_KEY = "enterprint-auth-access-token";
-const REFRESH_TOKEN_STORAGE_KEY = "enterprint-auth-refresh-token";
-const ACCOUNTS_STORAGE_KEY = "enterprint-auth-accounts";
-const RESET_STORAGE_KEY = "enterprint-auth-reset";
 
-const defaultAccount: MockAccount = {
-  id: "mock-user-1",
-  name: mockUser.name,
-  email: mockUser.email,
-  company: mockUser.company,
-  initials: mockUser.initials,
-  role: "Operations Lead",
-  emailVerified: true,
-  requires2FA: false,
-  password: "Password123!",
-};
-
-function getStoredAccounts(): MockAccount[] {
-  if (typeof window === "undefined") return [defaultAccount];
-
-  const stored = window.localStorage.getItem(ACCOUNTS_STORAGE_KEY);
-  if (!stored) {
-    window.localStorage.setItem(
-      ACCOUNTS_STORAGE_KEY,
-      JSON.stringify([defaultAccount]),
-    );
-    return [defaultAccount];
-  }
-
-  try {
-    return JSON.parse(stored) as MockAccount[];
-  } catch {
-    window.localStorage.setItem(
-      ACCOUNTS_STORAGE_KEY,
-      JSON.stringify([defaultAccount]),
-    );
-    return [defaultAccount];
-  }
-}
-
-function persistAccounts(accounts: MockAccount[]) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accounts));
-  }
+function isInterrupt(result: LoginResult): result is LoginInterrupt {
+  return "status" in result;
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
-  const [refreshToken, setRefreshToken] = useState<string | null>(null);
   const [isHydrated, setIsHydrated] = useState(false);
-  const pathname = usePathname();
   const router = useRouter();
+  const accessTokenRef = useRef<string | null>(null);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const persistSession = useCallback(
+    (nextUser: AuthUser | null, nextToken: string | null) => {
+      setUser(nextUser);
+      setAccessToken(nextToken);
+      accessTokenRef.current = nextToken;
 
-    try {
-      const storedUser = window.localStorage.getItem(USER_STORAGE_KEY);
-      const storedAccessToken = window.localStorage.getItem(
-        ACCESS_TOKEN_STORAGE_KEY,
-      );
-      const storedRefreshToken = window.localStorage.getItem(
-        REFRESH_TOKEN_STORAGE_KEY,
-      );
-
-      if (storedUser && storedAccessToken && storedRefreshToken) {
-        setUser(JSON.parse(storedUser) as AuthUser);
-        setAccessToken(storedAccessToken);
-        setRefreshToken(storedRefreshToken);
+      if (typeof window === "undefined") return;
+      if (nextUser && nextToken) {
+        window.localStorage.setItem(
+          USER_STORAGE_KEY,
+          JSON.stringify(nextUser),
+        );
+        window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, nextToken);
+      } else {
+        window.localStorage.removeItem(USER_STORAGE_KEY);
+        window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
       }
-    } catch {
-      // ignore malformed storage values and fall back to unauthenticated state
-    } finally {
-      setIsHydrated(true);
-    }
-  }, []);
+    },
+    [],
+  );
 
+  // Handle a successful auth response (login / verify / 2fa), which all share
+  // the `{ user, accessToken }` shape (refresh token arrives as a cookie).
+  const applyLoginResult = useCallback(
+    (result: LoginResult) => {
+      if (isInterrupt(result)) {
+        persistPendingEmail(result.email);
+        if (result.status === "REQUIRES_2FA") {
+          persistChallengeId(result.challengeId);
+          throw createAuthFlowError(
+            "REQUIRES_2FA",
+            "Two-factor verification is required to continue.",
+          );
+        }
+        throw createAuthFlowError(
+          "REQUIRES_EMAIL_VERIFICATION",
+          "Please verify your email before signing in.",
+        );
+      }
+
+      persistSession(result.user, result.accessToken);
+    },
+    [persistSession],
+  );
+
+  // On first mount, try to re-establish a session using the HttpOnly refresh
+  // cookie: refresh -> access token -> /account/me. Falls back to logged-out.
   useEffect(() => {
-    if (!isHydrated || typeof window === "undefined") return;
+    let cancelled = false;
 
-    if (user && accessToken && refreshToken) {
-      window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
-      window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, accessToken);
-      window.localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken);
-    } else {
-      window.localStorage.removeItem(USER_STORAGE_KEY);
-      window.localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY);
-      window.localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY);
-    }
-  }, [user, accessToken, refreshToken, isHydrated, pathname]);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const accounts = getStoredAccounts();
-    const account = accounts.find(
-      (entry) => entry.email.toLowerCase() === normalizedEmail,
-    );
-
-    if (!account || account.password !== password) {
-      throw new Error(
-        "We couldn’t find an account with those details. Try the demo credentials or create a new one.",
-      );
+    async function bootstrap() {
+      try {
+        const { accessToken: token } = await apiFetch<{ accessToken: string }>(
+          "/auth/refresh",
+          { method: "POST" },
+        );
+        const me = await apiFetch<AuthUser>("/account/me", { token });
+        if (!cancelled) persistSession(me, token);
+      } catch {
+        if (!cancelled) persistSession(null, null);
+      } finally {
+        if (!cancelled) setIsHydrated(true);
+      }
     }
 
-    if (!account.emailVerified) {
-      persistPendingEmail(account.email);
-      throw createAuthFlowError(
-        "REQUIRES_EMAIL_VERIFICATION",
-        "Please verify your email before signing in.",
-      );
-    }
+    bootstrap();
+    return () => {
+      cancelled = true;
+    };
+  }, [persistSession]);
 
-    if (account.requires2FA) {
-      persistPendingEmail(account.email);
-      throw createAuthFlowError(
-        "REQUIRES_2FA",
-        "Two-factor verification is required to continue.",
-      );
-    }
-
-    const nextAccessToken = `mock-access-${account.id}-${Date.now()}`;
-    const nextRefreshToken = `mock-refresh-${account.id}-${Date.now()}`;
-
-    setUser({
-      id: account.id,
-      name: account.name,
-      email: account.email,
-      company: account.company,
-      initials: account.initials,
-      role: account.role,
-      emailVerified: account.emailVerified,
-      requires2FA: account.requires2FA,
-    });
-    setAccessToken(nextAccessToken);
-    setRefreshToken(nextRefreshToken);
-  }, []);
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const result = await apiFetch<LoginResult>("/auth/login", {
+        method: "POST",
+        body: { email: email.trim().toLowerCase(), password },
+      });
+      applyLoginResult(result);
+    },
+    [applyLoginResult],
+  );
 
   const signup = useCallback(
     async (values: {
       name: string;
       email: string;
-      company: string;
+      phoneNumber: string;
       password: string;
+      confirmPassword: string;
     }) => {
-      const normalizedEmail = values.email.trim().toLowerCase();
-      const accounts = getStoredAccounts();
-      const existing = accounts.find(
-        (entry) => entry.email.toLowerCase() === normalizedEmail,
+      const result = await apiFetch<{ status: string; email: string }>(
+        "/auth/signup",
+        {
+          method: "POST",
+          body: {
+            name: values.name.trim(),
+            email: values.email.trim().toLowerCase(),
+            phoneNumber: values.phoneNumber.trim(),
+            password: values.password,
+            confirmPassword: values.confirmPassword,
+          },
+        },
       );
 
-      if (existing) {
-        throw new Error(
-          "An account with this email already exists. Please sign in instead.",
-        );
-      }
-
-      const newAccount: MockAccount = {
-        id: `mock-user-${Date.now()}`,
-        name: values.name.trim(),
-        email: values.email.trim(),
-        company: (values.company || "").trim() || "",
-        phoneNumber: values.phoneNumber?.trim() || "",
-        initials: values.name
-          .split(" ")
-          .filter(Boolean)
-          .slice(0, 2)
-          .map((segment) => segment[0]?.toUpperCase() ?? "")
-          .join(""),
-        role: "Customer",
-        emailVerified: false,
-        requires2FA: false,
-        password: values.password,
-      };
-
-      const updatedAccounts = [newAccount, ...accounts];
-      persistAccounts(updatedAccounts);
-      persistPendingEmail(newAccount.email);
-
+      persistPendingEmail(result.email);
       throw createAuthFlowError(
         "REQUIRES_EMAIL_VERIFICATION",
         "Your account was created. We sent a verification email to continue.",
@@ -238,107 +183,96 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const verifyEmail = useCallback(
+    async (email: string, code: string) => {
+      const result = await apiFetch<LoginResult>("/auth/verify-email", {
+        method: "POST",
+        body: { email: email.trim().toLowerCase(), code: code.trim() },
+      });
+      applyLoginResult(result);
+    },
+    [applyLoginResult],
+  );
+
+  const twoFactorChallenge = useCallback(
+    async (challengeId: string, code: string) => {
+      const result = await apiFetch<LoginResult>("/auth/2fa-challenge", {
+        method: "POST",
+        body: { challengeId, code: code.trim() },
+      });
+      applyLoginResult(result);
+    },
+    [applyLoginResult],
+  );
+
   const forgotPassword = useCallback(async (email: string) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    const accounts = getStoredAccounts();
-    const account = accounts.find(
-      (entry) => entry.email.toLowerCase() === normalizedEmail,
+    const { message } = await apiFetch<{ message: string }>(
+      "/auth/forgot-password",
+      {
+        method: "POST",
+        body: { email: email.trim().toLowerCase() },
+      },
     );
-
-    if (!account) {
-      throw new Error("No account was found for that email.");
-    }
-
-    const resetToken = `reset-${account.id}-${Date.now()}`;
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(
-        RESET_STORAGE_KEY,
-        JSON.stringify({ email: account.email, token: resetToken }),
-      );
-    }
-
-    return resetToken;
+    return message;
   }, []);
 
   const resetPassword = useCallback(
     async (token: string, newPassword: string) => {
-      if (!token || newPassword.length < 8) {
-        throw new Error(
-          "Please provide a valid reset token and a password of at least 8 characters.",
-        );
-      }
-
-      const storedReset =
-        typeof window !== "undefined"
-          ? window.localStorage.getItem(RESET_STORAGE_KEY)
-          : null;
-      if (!storedReset) {
-        throw new Error(
-          "This reset link is no longer valid. Please request a new one.",
-        );
-      }
-
-      const parsedReset = JSON.parse(storedReset) as {
-        email: string;
-        token: string;
-      };
-      if (parsedReset.token !== token) {
-        throw new Error(
-          "The reset token does not match the one we issued. Please try again.",
-        );
-      }
-
-      const accounts = getStoredAccounts();
-      const accountIndex = accounts.findIndex(
-        (entry) =>
-          entry.email.toLowerCase() === parsedReset.email.toLowerCase(),
+      const { message } = await apiFetch<{ message: string }>(
+        "/auth/reset-password",
+        {
+          method: "POST",
+          body: { token, newPassword },
+        },
       );
-
-      if (accountIndex === -1) {
-        throw new Error("We could not find the account to update.");
-      }
-
-      accounts[accountIndex] = {
-        ...accounts[accountIndex],
-        password: newPassword,
-      };
-      persistAccounts(accounts);
-
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(RESET_STORAGE_KEY);
-      }
+      return message;
     },
     [],
   );
 
   const refreshSession = useCallback(async () => {
-    if (!user || !refreshToken) return;
+    try {
+      const { accessToken: token } = await apiFetch<{ accessToken: string }>(
+        "/auth/refresh",
+        { method: "POST" },
+      );
+      setAccessToken(token);
+      accessTokenRef.current = token;
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, token);
+      }
+      return token;
+    } catch {
+      persistSession(null, null);
+      return null;
+    }
+  }, [persistSession]);
 
-    const nextAccessToken = `mock-access-${user.id}-${Date.now()}`;
-    setAccessToken(nextAccessToken);
-  }, [refreshToken, user]);
-
-  const logout = useCallback(() => {
-    setUser(null);
-    setAccessToken(null);
-    setRefreshToken(null);
+  const logout = useCallback(async () => {
+    try {
+      await apiFetch("/auth/logout", { method: "POST" });
+    } catch {
+      // Even if the server call fails, clear the local session.
+    }
+    persistSession(null, null);
 
     if (typeof window !== "undefined") {
       window.location.assign("/");
     } else {
       router.replace("/");
     }
-  }, [router]);
+  }, [persistSession, router]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       accessToken,
-      refreshToken,
-      isAuthenticated: Boolean(user && accessToken && refreshToken),
+      isAuthenticated: Boolean(user && accessToken),
       isHydrated,
       login,
       signup,
+      verifyEmail,
+      twoFactorChallenge,
       forgotPassword,
       resetPassword,
       refreshSession,
@@ -351,10 +285,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       refreshSession,
-      refreshToken,
-      signup,
       resetPassword,
+      signup,
+      twoFactorChallenge,
       user,
+      verifyEmail,
     ],
   );
 
