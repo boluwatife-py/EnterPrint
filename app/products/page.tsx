@@ -28,7 +28,7 @@ export default async function ProductsPage({
       </header>
 
       <div className="mt-8">
-        <CatalogBrowser initialCategory={category} />
+        <CatalogBrowser />
       </div>
     </div>
   )

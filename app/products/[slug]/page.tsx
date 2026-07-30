@@ -1,60 +1,73 @@
-// app/products/[slug]/page.tsx  (or wherever this file lives)
-import type { Metadata } from "next"
-import { notFound } from "next/navigation"
-import Link from "next/link"
-import Image from "next/image"
-import { Star, Check, ChevronRight } from "lucide-react"
-import { getProduct, getCategory, products } from "@/lib/data"
-import { ProductCustomizer } from "@/components/product/product-customizer"
-import { RelatedProducts } from "@/components/product/related-products"
-import { Badge } from "@/components/ui/badge"
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import { Star, Check, ChevronRight } from "lucide-react";
 
-export function generateStaticParams() {
-  return products.map((p) => ({ slug: p.slug }))
-}
+import {
+  getProduct,
+  listProducts,
+  findCategory,
+  getProductsByCategory,
+  listCategories,
+} from "@/lib/api/catalog-api";
+
+import { ProductCustomizer } from "@/components/product/product-customizer";
+import { RelatedProducts } from "@/components/product/related-products";
+import { Badge } from "@/components/ui/badge";
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params
-  const product = getProduct(slug)
-  if (!product) return { title: "Product not found — EnterPrint" }
+  const { slug } = await params;
+
+  const product = await getProduct(slug);
+
   return {
     title: `${product.name} — EnterPrint`,
-    description: product.tagline,
-  }
+    description: product.tagline ?? product.description ?? undefined,
+  };
 }
-
 export default async function ProductPage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params
-  const product = getProduct(slug)
-  if (!product) notFound()
+  const { slug } = await params;
 
-  const category = getCategory(product.categorySlug)
+  let product;
 
-  // No slice here anymore — pass the full related set, let the client
-  // component decide how much to reveal.
-  const related = products.filter(
-    (p) => p.categorySlug === product.categorySlug && p.slug !== product.slug,
-  )
+  try {
+    product = await getProduct(slug);
+  } catch {
+    notFound();
+  }
 
+  const categories = await listCategories();
+  const category = findCategory(categories, product.categorySlug);
+
+  const related = (await getProductsByCategory(product.categorySlug)).filter(
+    (p) => p.slug !== product.slug,
+  );
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
-      <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm text-muted-foreground">
+      <nav
+        aria-label="Breadcrumb"
+        className="flex items-center gap-1.5 text-sm text-muted-foreground"
+      >
         <Link href="/products" className="hover:text-foreground">
           Products
         </Link>
         <ChevronRight className="h-3.5 w-3.5" />
         {category && (
           <>
-            <Link href={`/products?category=${category.slug}`} className="hover:text-foreground">
+            <Link
+              href={`/products?category=${category.slug}`}
+              className="hover:text-foreground"
+            >
               {category.name}
             </Link>
             <ChevronRight className="h-3.5 w-3.5" />
@@ -76,7 +89,9 @@ export default async function ProductPage({
               className="object-cover"
             />
             {product.popular && (
-              <Badge className="absolute left-4 top-4 bg-accent text-accent-foreground">Popular</Badge>
+              <Badge className="absolute left-4 top-4 bg-accent text-accent-foreground">
+                Popular
+              </Badge>
             )}
           </div>
         </div>
@@ -95,15 +110,24 @@ export default async function ProductPage({
           <div className="mt-3 flex items-center gap-2 text-sm">
             <span className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-accent text-accent" />
-              <span className="font-medium text-foreground">{product.rating}</span>
+              <span className="font-medium text-foreground">
+                {product.rating}
+              </span>
             </span>
-            <span className="text-muted-foreground">({product.reviews} reviews)</span>
+            <span className="text-muted-foreground">
+              ({product.reviews} reviews)
+            </span>
           </div>
-          <p className="mt-4 text-muted-foreground leading-relaxed">{product.description}</p>
+          <p className="mt-4 text-muted-foreground leading-relaxed">
+            {product.description}
+          </p>
 
           <ul className="mt-6 grid gap-2 sm:grid-cols-2">
             {product.features.map((f) => (
-              <li key={f} className="flex items-center gap-2 text-sm text-foreground">
+              <li
+                key={f}
+                className="flex items-center gap-2 text-sm text-foreground"
+              >
                 <Check className="h-4 w-4 shrink-0 text-primary" />
                 {f}
               </li>
@@ -114,7 +138,9 @@ export default async function ProductPage({
 
       {/* Customizer */}
       <section className="mt-12">
-        <h2 className="text-xl font-bold text-foreground">Customize your order</h2>
+        <h2 className="text-xl font-bold text-foreground">
+          Customize your order
+        </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Configure your specs and see live pricing as you go.
         </p>
@@ -126,5 +152,5 @@ export default async function ProductPage({
       {/* Related */}
       <RelatedProducts products={related} />
     </div>
-  )
+  );
 }

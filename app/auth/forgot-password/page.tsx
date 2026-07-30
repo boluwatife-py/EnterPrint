@@ -1,19 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
+import { withRedirectParam } from "@/lib/auth-redirect";
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordPageContent() {
+  const searchParams = useSearchParams();
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const rawRedirect = searchParams.get("redirect");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +51,7 @@ export default function ForgotPasswordPage() {
         <p className="text-sm text-muted-foreground">
           Remembered it?{" "}
           <Link
-            href="/auth/login"
+            href={withRedirectParam("/auth/login", rawRedirect)}
             className="font-medium text-foreground hover:text-primary"
           >
             Return to sign in
@@ -83,6 +88,39 @@ export default function ForgotPasswordPage() {
           {loading ? "Preparing reset link…" : "Send reset link"}
         </Button>
       </form>
+    </AuthShell>
+  );
+}
+
+export default function ForgotPasswordPage() {
+  return (
+    <Suspense fallback={<ForgotPasswordPageSkeleton />}>
+      <ForgotPasswordPageContent />
+    </Suspense>
+  );
+}
+
+function ForgotPasswordPageSkeleton() {
+  return (
+    <AuthShell
+      title="Reset your password"
+      description="Preparing your secure reset experience."
+      footer={
+        <p className="text-sm text-muted-foreground">
+          Remembered it?{" "}
+          <Link
+            href="/auth/login"
+            className="font-medium text-foreground hover:text-primary"
+          >
+            Return to sign in
+          </Link>
+        </p>
+      }
+    >
+      <div className="space-y-4">
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      </div>
     </AuthShell>
   );
 }

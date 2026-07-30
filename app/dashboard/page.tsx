@@ -1,6 +1,7 @@
 // app/dashboard/page.tsx
 "use client";
 
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -12,39 +13,27 @@ import {
   UploadCloud,
   RefreshCcw,
   Search,
+  AlertCircle,
+  Eye,
+  MessageSquare,
+  MoreHorizontal,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useCart } from "@/lib/cart-context";
-import { mockThreads } from "@/lib/mock-account";
+import { getDashboard, type DashboardSummary } from "@/lib/api/account-api";
+import { reorderOrder, type Order } from "@/lib/api/orders-api";
+import { formatNaira, formatDate } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { FloatingChatButton } from "@/components/dashboard/floating-chat-button";
-
-const PRODUCTION_STAGES = [
-  "Order received",
-  "Design",
-  "Approval",
-  "Production",
-  "Finishing",
-  "Packaging",
-  "Dispatch",
-  "Delivery",
-];
-
-function stageIndex(status: string) {
-  const i = PRODUCTION_STAGES.findIndex((s) =>
-    status.toLowerCase().includes(s.toLowerCase()),
-  );
-  return i === -1 ? 0 : i;
-}
-
-const statCards = [
-  { label: "Open orders", value: "3", hint: "Active print jobs", icon: Package },
-  { label: "Needs your review", value: "1", hint: "Proof awaiting approval", icon: Clock3 },
-  { label: "Support threads", value: String(mockThreads.length), hint: "Messages in your inbox", icon: MessageSquareText },
-];
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const quickActions = [
   { label: "Start an order", href: "/products", icon: Package },
@@ -53,9 +42,44 @@ const quickActions = [
   { label: "Reorder last job", href: "/dashboard/orders", icon: RefreshCcw },
 ];
 
+const SHIPPED_STATUSES = new Set(["Dispatch", "Delivery"]);
+
+type LoadState = "loading" | "ready" | "error";
+
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
-  const { orders } = useCart();
+  const { user, logout, authFetch } = useAuth();
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [state, setState] = useState<LoadState>("loading");
+  const [reorderingId, setReorderingId] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    setState("loading");
+    getDashboard(authFetch)
+      .then((data) => {
+        setSummary(data);
+        setState("ready");
+      })
+      .catch(() => setState("error"));
+  }, [authFetch]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  async function handleReorder(order: Order) {
+    setReorderingId(order.id);
+    try {
+      const result = await reorderOrder(authFetch, order.id);
+      window.location.href = result.paymentUrl;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : null;
+      toast.error(
+        message ||
+          "Couldn't reorder — none of the items may still be available.",
+      );
+      setReorderingId(null);
+    }
+  }
 
   const initials = (user?.name ?? "You")
     .split(" ")
@@ -63,6 +87,35 @@ export default function DashboardPage() {
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  const statCards = [
+    {
+      label: "Open orders",
+      value: summary?.openOrders ?? null,
+      hint: "Active print jobs",
+      icon: Package,
+      href: "/dashboard/orders",
+      alert: false,
+    },
+    {
+      label: "Needs your review",
+      value: summary?.needsReview ?? null,
+      hint: "Proofs awaiting approval",
+      icon: Clock3,
+      href: "/dashboard/orders?status=awaiting-proof",
+      alert: (summary?.needsReview ?? 0) > 0,
+    },
+    {
+      label: "Unread messages",
+      value: summary?.unreadThreadCount ?? null,
+      hint: "Support threads with new replies",
+      icon: MessageSquareText,
+      href: "/dashboard/messages",
+      alert: (summary?.unreadThreadCount ?? 0) > 0,
+    },
+  ];
+
+  const recentOrders = (summary?.recentOrders ?? []) as unknown as Order[];
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-10 px-4 py-10 sm:px-6 lg:px-8">
@@ -98,16 +151,34 @@ export default function DashboardPage() {
         {statCards.map((card) => {
           const Icon = card.icon;
           return (
-            <div key={card.label} className="flex items-start gap-3 rounded-xl border border-border bg-card p-5">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-secondary text-muted-foreground">
+            <Link
+              key={card.label}
+              href={card.href}
+              className={cn(
+                "flex items-start gap-3 rounded-xl border bg-card p-5 transition-colors hover:border-primary/30",
+                card.alert ? "border-primary/30 bg-primary/5" : "border-border",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-md",
+                  card.alert ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground",
+                )}
+              >
                 <Icon className="h-4 w-4" />
               </span>
               <div>
-                <p className="text-2xl font-semibold tracking-tight text-foreground">{card.value}</p>
+                {card.value === null ? (
+                  <span className="block h-8 w-10 animate-pulse rounded bg-secondary" />
+                ) : (
+                  <p className="text-2xl font-semibold tracking-tight text-foreground">
+                    {card.value}
+                  </p>
+                )}
                 <p className="text-sm text-foreground">{card.label}</p>
                 <p className="text-xs text-muted-foreground">{card.hint}</p>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>
@@ -140,7 +211,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between border-b border-border p-5">
             <div>
               <h2 className="font-serif text-lg font-semibold text-foreground">Recent orders</h2>
-              <p className="text-sm text-muted-foreground">Production milestones and delivery estimates.</p>
+              <p className="text-sm text-muted-foreground">Active updates, items, and billing details.</p>
             </div>
             <Button render={<Link href="/dashboard/orders" />} variant="ghost" size="sm">
               View all
@@ -149,44 +220,151 @@ export default function DashboardPage() {
           </div>
 
           <div className="divide-y divide-border">
-            {orders.slice(0, 3).map((order) => {
-              const idx = stageIndex(order.status);
-              const percent = Math.round(((idx + 1) / PRODUCTION_STAGES.length) * 100);
-              return (
-                <div key={order.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
-                      <Package className="h-5 w-5" />
-                    </span>
-                    <div>
-                      <p className="font-medium text-foreground">{order.items[0]?.name}</p>
-                      <p className="text-xs text-muted-foreground">{order.id}</p>
+            {state === "loading" &&
+              [0, 1, 2].map((i) => (
+                <div key={i} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex flex-1 items-start gap-3">
+                    <span className="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-secondary" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <span className="block h-4 w-24 animate-pulse rounded bg-secondary" />
+                      <span className="block h-3 w-40 animate-pulse rounded bg-secondary" />
+                      <div className="flex gap-1.5">
+                        <span className="block h-5 w-20 animate-pulse rounded-full bg-secondary" />
+                        <span className="block h-5 w-16 animate-pulse rounded-full bg-secondary" />
+                      </div>
                     </div>
                   </div>
-
-                  <div className="flex flex-1 flex-col gap-1.5 sm:max-w-xs">
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-foreground">{PRODUCTION_STAGES[idx]}</span>
-                      <span className="text-muted-foreground">{percent}%</span>
-                    </div>
-                    <Progress value={percent} className="h-1.5" />
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <Badge variant="secondary">{order.status}</Badge>
-                    <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Truck className="h-3.5 w-3.5" />
-                      ETA {order.estimatedDelivery}
-                    </span>
-                    <Button render={<Link href={`/dashboard/orders/${order.id}`} />} variant="outline" size="sm">
-                      View
-                    </Button>
+                  <div className="flex shrink-0 items-center gap-3">
+                    <span className="block h-5 w-20 animate-pulse rounded-full bg-secondary" />
+                    <span className="hidden h-4 w-16 animate-pulse rounded bg-secondary sm:block" />
+                    <span className="block h-8 w-8 animate-pulse rounded bg-secondary" />
                   </div>
                 </div>
-              );
-            })}
+              ))}
 
-            {orders.length === 0 && (
+            {state === "error" && (
+              <div className="flex flex-col items-center gap-3 p-10 text-center">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+                <p className="text-sm text-foreground">Couldn&apos;t load your recent orders.</p>
+                <Button variant="outline" size="sm" onClick={load}>
+                  Try again
+                </Button>
+              </div>
+            )}
+
+            {state === "ready" &&
+              recentOrders.map((order) => {
+                const isShipped = SHIPPED_STATUSES.has(order.status);
+                const totalQty = order.items.reduce((n, i) => n + i.quantity, 0);
+
+                return (
+                  <div
+                    key={order.id}
+                    className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <Link
+                      href={`/dashboard/orders/${order.id}`}
+                      className="flex flex-1 items-start gap-3 min-w-0"
+                    >
+                      <span className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-secondary text-muted-foreground">
+                        <Package className="h-5 w-5" />
+                        {order.unreadMessageCount > 0 && (
+                          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                            {order.unreadMessageCount > 9 ? "9+" : order.unreadMessageCount}
+                          </span>
+                        )}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-foreground">{order.id}</p>
+                          {order.unreadMessageCount > 0 && (
+                            <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              <MessageSquare className="h-2.5 w-2.5" />
+                              New update
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(order.createdAt)} · {order.items.length}{" "}
+                          {order.items.length === 1 ? "item" : "items"} · Qty {totalQty}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                          {order.items.map((item, i) => (
+                            <span
+                              key={i}
+                              className="rounded-full bg-secondary px-2 py-0.5 text-[11px] text-muted-foreground"
+                            >
+                              {item.name}
+                              {item.quantity > 1 ? ` ×${item.quantity}` : ""}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </Link>
+
+                    <div className="flex shrink-0 items-center gap-3">
+                      <Badge variant="secondary">{order.status}</Badge>
+                      <span className="hidden text-sm font-medium text-foreground sm:inline">
+                        {formatNaira(order.total)}
+                      </span>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              aria-label={`Actions for order ${order.id}`}
+                              disabled={reorderingId === order.id}
+                            />
+                          }
+                        >
+                          {reorderingId === order.id ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <MoreHorizontal className="h-4 w-4" />
+                          )}
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-auto min-w-40">
+                          <DropdownMenuItem render={<Link href={`/dashboard/orders/${order.id}`} />}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View order
+                          </DropdownMenuItem>
+                          {order.threadId && (
+                            <DropdownMenuItem
+                              className="flex items-center whitespace-nowrap"
+                              render={<Link href={`/dashboard/messages/${order.threadId}`} />}
+                            >
+                              <MessageSquare className="mr-2 h-4 w-4 shrink-0" />
+                              View messages
+                              {order.unreadMessageCount > 0 && (
+                                <Badge variant="secondary" className="ml-auto shrink-0">
+                                  {order.unreadMessageCount}
+                                </Badge>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => handleReorder(order)}
+                            disabled={reorderingId === order.id}
+                          >
+                            <RefreshCcw className="mr-2 h-4 w-4" />
+                            Reorder
+                          </DropdownMenuItem>
+                          {isShipped && (
+                            <DropdownMenuItem render={<Link href={`/track-order?order=${order.id}`} />}>
+                              <Truck className="mr-2 h-4 w-4" />
+                              Track delivery
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                );
+              })}
+
+            {state === "ready" && recentOrders.length === 0 && (
               <div className="flex flex-col items-center gap-3 p-10 text-center">
                 <UploadCloud className="h-6 w-6 text-muted-foreground" />
                 <p className="text-sm text-muted-foreground">No orders yet — start your first project.</p>
@@ -233,8 +411,6 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
-
-      <FloatingChatButton />
     </div>
   );
 }

@@ -1,13 +1,17 @@
-import { Analytics } from "@vercel/analytics/next";
+// import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
+
 import "./globals.css";
+
 import { CartProvider } from "@/lib/cart-context";
 import { AuthProvider } from "@/lib/auth-context";
+import { listCategories } from "@/lib/api/catalog-api";
+
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
-import { Toaster } from "@/components/ui/sonner";
 import { SiteHeaderSkeleton } from "@/components/layout/site-header-skeleton";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "EnterPrint — Packaging, Branding & Commercial Printing Marketplace",
@@ -30,30 +34,33 @@ export const viewport: Viewport = {
   themeColor: "#1a2340",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const categories = await listCategories();
+
   return (
     <html lang="en" className="light">
-      <body
-        className="antialiased bg-background font-sans"
-        cz-shortcut-listen="true"
-      >
+      <body className="bg-background font-sans antialiased" cz-shortcut-listen="true">
         <AuthProvider>
           <CartProvider>
             <div className="flex min-h-dvh flex-col">
               <Suspense fallback={<SiteHeaderSkeleton />}>
-                <SiteHeader />
+                <SiteHeader categories={categories} />
               </Suspense>
+
               <main className="flex-1">{children}</main>
-              <SiteFooter />
+
+              <SiteFooter categories={categories} />
             </div>
+
             <Toaster position="top-center" />
           </CartProvider>
         </AuthProvider>
-        {process.env.NODE_ENV === "production" && <Analytics />}
+
+        {/* {process.env.NODE_ENV === "production" && <Analytics />} */}
       </body>
     </html>
   );

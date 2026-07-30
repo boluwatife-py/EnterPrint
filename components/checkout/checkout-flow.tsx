@@ -1,40 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { ShieldCheck, Loader2, Lock, ArrowLeft } from "lucide-react";
+import {
+  ShieldCheck,
+  Loader2,
+  Lock,
+  ArrowLeft,
+  MapPin,
+  Plus,
+} from "lucide-react";
+
+import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart-context";
-import { formatNaira } from "@/lib/format";
+import { formatNaira } from "@/lib/utils/format";
+import {
+  listAddresses,
+  createAddress,
+  type Address,
+} from "@/lib/api/account-api";
+import { placeOrder, type DeliveryMethod } from "@/lib/api/orders-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-const DELIVERY_FEE = 3500;
+/**
+ * Estimated delivery fees shown while the user is picking a method. The
+ * backend computes the authoritative `delivery`/`total` on `POST /orders`
+ * (these numbers are placeholders pending real delivery pricing per
+ * endpoint.md §6), so the summary below is labelled "estimated".
+ */
+const DELIVERY_ESTIMATES: Record<DeliveryMethod, number> = {
+  standard: 4500,
+  express: 9000,
+};
+
+type NewAddressForm = {
+  title: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  country: string;
+  isDefault: boolean;
+};
+
+const emptyNewAddress: NewAddressForm = {
+  title: "",
+  streetAddress: "",
+  city: "",
+  state: "",
+  country: "Nigeria",
+  isDefault: false,
+};
 
 export function CheckoutFlow() {
   const router = useRouter();
-  const { items, subtotal, placeOrder } = useCart();
-  const [processing, setProcessing] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    country: "Nigeria",
-  });
+  const { authFetch } = useAuth();
+  const { items, subtotal, clearCart } = useCart();
 
-  const total = subtotal + DELIVERY_FEE;
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
+    null,
+  );
+  const [addingNewAddress, setAddingNewAddress] = useState(false);
+  const [newAddress, setNewAddress] = useState<NewAddressForm>(emptyNewAddress);
+
+  const [deliveryMethod, setDeliveryMethod] =
+    useState<DeliveryMethod>("standard");
+  const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const deliveryEstimate = DELIVERY_ESTIMATES[deliveryMethod];
+  const totalEstimate = subtotal + deliveryEstimate;
+
+  // Load saved addresses once and pre-select the default (backend already
+  // sorts default-first, but `.find` is explicit and doesn't rely on that
+  // ordering holding forever). No saved addresses -> jump straight to the
+  // "add address" form so there's always a path forward.
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAddresses() {
+      try {
+        const data = await listAddresses(authFetch);
+        if (cancelled) return;
+
+        setAddresses(data);
+
+        const defaultAddress = data.find((a) => a.isDefault) ?? data[0];
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+        } else {
+          setAddingNewAddress(true);
+        }
+      } catch {
+        if (!cancelled) {
+          setError(
+            "Couldn't load your saved addresses. You can still add one below.",
+          );
+          setAddingNewAddress(true);
+        }
+      } finally {
+        if (!cancelled) setAddressesLoading(false);
+      }
+    }
+
+    loadAddresses();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [authFetch]);
 
   if (items.length === 0) {
     return (
@@ -49,109 +129,256 @@ export function CheckoutFlow() {
     );
   }
 
-  function handlePay(e: React.FormEvent) {
+  function updateNewAddress<K extends keyof NewAddressForm>(
+    key: K,
+    value: NewAddressForm[K],
+  ) {
+    setNewAddress((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function handlePay(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     setProcessing(true);
-    // Simulated Paystack/Flutterwave payment processing
-    setTimeout(() => {
-      const fullAddress = `${form.address}, ${form.city}, ${form.country}`;
-      const order = placeOrder({
-        address: fullAddress,
-        delivery: DELIVERY_FEE,
-      });
-      router.push(`/order-confirmation/${order.id}`);
-    }, 2200);
+
+    try {
+      let deliveryAddressId = selectedAddressId;
+
+      // A new address always has to be persisted first — POST /orders only
+      // accepts a `deliveryAddressId` pointing at a saved Address row, there
+      // is no one-off/guest address on this backend.
+      if (addingNewAddress) {
+        if (
+          !newAddress.title ||
+          !newAddress.streetAddress ||
+          !newAddress.city ||
+          !newAddress.state
+        ) {
+          setError(
+            "Fill in the address fields, or select a saved address instead.",
+          );
+          setProcessing(false);
+          return;
+        }
+
+        const saved = await createAddress(authFetch, newAddress);
+        deliveryAddressId = saved.id;
+      }
+
+      if (!deliveryAddressId) {
+        setError("Select or add a delivery address to continue.");
+        setProcessing(false);
+        return;
+      }
+
+      const order = await placeOrder(
+        authFetch,
+        items,
+        deliveryAddressId,
+        deliveryMethod,
+      );
+
+      if (order.paymentUrl) {
+        window.location.href = order.paymentUrl;
+      } else {
+        router.push(`/order-confirmation/${order.id}`);
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : null;
+      setError(
+        message || "Something went wrong placing your order. Please try again.",
+      );
+      setProcessing(false);
+    }
   }
 
   return (
     <form onSubmit={handlePay} className="grid gap-8 lg:grid-cols-[1fr_380px]">
       <div className="space-y-8">
-        {/* Delivery details */}
+        {/* Delivery address */}
         <section className="rounded-xl border border-border bg-card p-6">
           <h2 className="text-lg font-semibold text-foreground">
-            Delivery details
+            Delivery address
           </h2>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full name</Label>
-              <Input
-                id="name"
-                required
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Ada Obi"
-                className="h-11"
-              />
+
+          {addressesLoading ? (
+            <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Loading your addresses...
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                required
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="ada@brand.com"
-                className="h-11"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                required
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+234 801 234 5678"
-                className="h-11"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="country">Country</Label>
-              <Select
-                value={form.country}
-                onValueChange={(v) =>
-                  setForm({ ...form, country: v ?? "Nigeria" })
-                }
-              >
-                <SelectTrigger
-                  id="country"
-                  className="h-11 w-full justify-between px-3.5"
+          ) : (
+            <div className="mt-4 space-y-3">
+              {addresses.map((address) => (
+                <label
+                  key={address.id}
+                  className={cn(
+                    "flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+                    !addingNewAddress && selectedAddressId === address.id
+                      ? "border-primary bg-primary/5"
+                      : "border-border",
+                  )}
                 >
-                  <SelectValue className="w-full text-left" />
-                </SelectTrigger>
-                <SelectContent className="m-0">
-                  <SelectItem value="Nigeria">Nigeria</SelectItem>
-                  <SelectItem value="Ghana">Ghana</SelectItem>
-                  <SelectItem value="Kenya">Kenya</SelectItem>
-                  <SelectItem value="South Africa">South Africa</SelectItem>
-                  <SelectItem value="United Kingdom">United Kingdom</SelectItem>
-                  <SelectItem value="United States">United States</SelectItem>
-                </SelectContent>
-              </Select>
+                  <input
+                    type="radio"
+                    name="address"
+                    className="mt-1"
+                    checked={
+                      !addingNewAddress && selectedAddressId === address.id
+                    }
+                    onChange={() => {
+                      setSelectedAddressId(address.id);
+                      setAddingNewAddress(false);
+                    }}
+                  />
+                  <div className="flex-1 text-sm">
+                    <div className="flex items-center gap-2 font-medium text-foreground">
+                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                      {address.title}
+                      {address.isDefault && (
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
+                          Default
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-muted-foreground">
+                      {address.streetAddress}, {address.city}, {address.state},{" "}
+                      {address.country}
+                    </p>
+                  </div>
+                </label>
+              ))}
+
+              <label
+                className={cn(
+                  "flex cursor-pointer items-center gap-3 rounded-lg border border-dashed p-4 text-sm transition-colors",
+                  addingNewAddress
+                    ? "border-primary bg-primary/5"
+                    : "border-border",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="address"
+                  checked={addingNewAddress}
+                  onChange={() => setAddingNewAddress(true)}
+                />
+                <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="font-medium text-foreground">
+                  Use a new address
+                </span>
+              </label>
+
+              {addingNewAddress && (
+                <div className="grid gap-4 rounded-lg border border-border bg-secondary/30 p-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="title">Label</Label>
+                    <Input
+                      id="title"
+                      required
+                      value={newAddress.title}
+                      onChange={(e) =>
+                        updateNewAddress("title", e.target.value)
+                      }
+                      placeholder="Home, Office..."
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="streetAddress">Street address</Label>
+                    <Input
+                      id="streetAddress"
+                      required
+                      value={newAddress.streetAddress}
+                      onChange={(e) =>
+                        updateNewAddress("streetAddress", e.target.value)
+                      }
+                      placeholder="14 Awolowo Road, Flat 3B"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input
+                      id="city"
+                      required
+                      value={newAddress.city}
+                      onChange={(e) => updateNewAddress("city", e.target.value)}
+                      placeholder="Ikoyi"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Input
+                      id="state"
+                      required
+                      value={newAddress.state}
+                      onChange={(e) =>
+                        updateNewAddress("state", e.target.value)
+                      }
+                      placeholder="Lagos"
+                      className="h-11"
+                    />
+                  </div>
+                  <div className="space-y-2 sm:col-span-2">
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      value={newAddress.country}
+                      onChange={(e) =>
+                        updateNewAddress("country", e.target.value)
+                      }
+                      className="h-11"
+                    />
+                  </div>
+                  <label className="flex items-center gap-2 text-sm text-muted-foreground sm:col-span-2">
+                    <input
+                      type="checkbox"
+                      checked={newAddress.isDefault}
+                      onChange={(e) =>
+                        updateNewAddress("isDefault", e.target.checked)
+                      }
+                    />
+                    Save to my account &amp; set as default delivery address
+                  </label>
+                </div>
+              )}
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="address">Street address</Label>
-              <Input
-                id="address"
-                required
-                value={form.address}
-                onChange={(e) => setForm({ ...form, address: e.target.value })}
-                placeholder="12 Admiralty Way, Lekki Phase 1"
-                className="h-11"
-              />
-            </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="city">City / State</Label>
-              <Input
-                id="city"
-                required
-                value={form.city}
-                onChange={(e) => setForm({ ...form, city: e.target.value })}
-                placeholder="Lagos"
-                className="h-11"
-              />
-            </div>
+          )}
+        </section>
+
+        {/* Delivery method */}
+        <section className="rounded-xl border border-border bg-card p-6">
+          <h2 className="text-lg font-semibold text-foreground">
+            Delivery method
+          </h2>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {(["standard", "express"] as const).map((method) => (
+              <label
+                key={method}
+                className={cn(
+                  "flex cursor-pointer items-center justify-between rounded-lg border p-4 text-sm transition-colors",
+                  deliveryMethod === method
+                    ? "border-primary bg-primary/5"
+                    : "border-border",
+                )}
+              >
+                <span className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    checked={deliveryMethod === method}
+                    onChange={() => setDeliveryMethod(method)}
+                  />
+                  <span className="capitalize font-medium text-foreground">
+                    {method}
+                  </span>
+                </span>
+                <span className="text-muted-foreground">
+                  ~{formatNaira(DELIVERY_ESTIMATES[method])}
+                </span>
+              </label>
+            ))}
           </div>
         </section>
 
@@ -163,15 +390,20 @@ export function CheckoutFlow() {
               Secure checkout via Paystack
             </span>
           </div>
-
           <div className="mt-4 rounded-lg border border-dashed border-border bg-secondary/40 p-4 text-sm text-muted-foreground">
             <p>
-              You will be redirected to Paystack to complete payment securely.
-              Once payment is confirmed, you will be taken back to your order
-              confirmation with the order ID.
+              You&apos;ll be redirected to Paystack to complete payment
+              securely. Once payment is confirmed, you&apos;ll be taken back to
+              your order confirmation with the order ID.
             </p>
           </div>
         </section>
+
+        {error && (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            {error}
+          </p>
+        )}
       </div>
 
       {/* Summary + pay */}
@@ -214,34 +446,38 @@ export function CheckoutFlow() {
               </dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Delivery</dt>
+              <dt className="text-muted-foreground">Delivery (est.)</dt>
               <dd className="font-medium text-foreground">
-                {formatNaira(DELIVERY_FEE)}
+                {formatNaira(deliveryEstimate)}
               </dd>
             </div>
             <div className="flex justify-between border-t border-border pt-3">
-              <dt className="font-semibold text-foreground">Total</dt>
+              <dt className="font-semibold text-foreground">Estimated total</dt>
               <dd className="text-xl font-bold text-foreground">
-                {formatNaira(total)}
+                {formatNaira(totalEstimate)}
               </dd>
             </div>
           </dl>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Final pricing is confirmed by the server before you&apos;re sent to
+            Paystack.
+          </p>
 
           <Button
             type="submit"
             size="lg"
-            disabled={processing}
+            disabled={processing || addressesLoading}
             className="mt-5 h-12 w-full text-base"
           >
             {processing ? (
               <>
                 <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                Processing payment...
+                Placing order...
               </>
             ) : (
               <>
                 <Lock className="mr-1 h-4 w-4" />
-                Pay {formatNaira(total)}
+                Continue to payment
               </>
             )}
           </Button>

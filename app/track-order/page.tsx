@@ -12,34 +12,60 @@ import {
   VideoIcon,
   MessageCircle,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
-import { findTrackedOrder, type TrackedOrder } from "@/lib/mock-tracking";
-import { PRODUCTION_STAGES, stageIndex } from "@/lib/production-stages";
-import { OrderTimeline } from "@/components/dashboard/order-timeline";
+
+import { trackOrder, type TrackedOrder } from "@/lib/api/tracking-api";
+import { ApiError } from "@/lib/api/api";
+import { OrderTimeline } from "@/components/dashboard/orders/order-timeline";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+type Status = "idle" | "loading" | "found" | "not-found" | "error";
 
 function TrackOrderContent() {
   const searchParams = useSearchParams();
 
   const [orderId, setOrderId] = useState(searchParams.get("order") ?? "");
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<Status>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [result, setResult] = useState<TrackedOrder | null>(null);
-  const [notFound, setNotFound] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!orderId.trim() || !email.trim()) return;
-    const found = findTrackedOrder(orderId, email);
-    setResult(found ?? null);
-    setNotFound(!found);
-    setSubmitted(true);
-  }
 
-  const idx = result ? stageIndex(result.status) : 0;
+    setStatus("loading");
+    setErrorMessage(null);
+
+    try {
+      const found = await trackOrder(orderId, email);
+      setResult(found);
+      setStatus("found");
+    } catch (err) {
+      const httpStatus = (err as { status?: number }).status;
+      if (httpStatus === 404) {
+        setResult(null);
+        setStatus("not-found");
+        return;
+      }
+      if (httpStatus === 429) {
+        setErrorMessage(
+          "Too many lookups — please wait a minute and try again.",
+        );
+      } else {
+        const message = err instanceof Error ? err.message : null;
+        setErrorMessage(
+          message ||
+            "Something went wrong looking up your order. Please try again.",
+        );
+      }
+      setStatus("error");
+    }
+  }
 
   return (
     <>
@@ -81,8 +107,17 @@ function TrackOrderContent() {
                 className="h-11"
               />
             </div>
-            <Button type="submit" size="lg" className="h-11 shrink-0 px-6">
-              <Search className="mr-2 h-4 w-4" />
+            <Button
+              type="submit"
+              size="lg"
+              className="h-11 shrink-0 px-6"
+              disabled={status === "loading"}
+            >
+              {status === "loading" ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="mr-2 h-4 w-4" />
+              )}
               Track
             </Button>
           </form>
@@ -91,7 +126,7 @@ function TrackOrderContent() {
 
       {/* Results */}
       <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        {!submitted && (
+        {status === "idle" && (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
             <Package className="h-6 w-6 text-muted-foreground" />
             <p className="font-medium text-foreground">
@@ -105,11 +140,18 @@ function TrackOrderContent() {
           </div>
         )}
 
-        {submitted && notFound && (
+        {status === "loading" && (
+          <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Looking up your order...
+          </div>
+        )}
+
+        {status === "not-found" && (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-border py-16 text-center">
             <AlertCircle className="h-6 w-6 text-muted-foreground" />
             <p className="font-medium text-foreground">
-              We couldn't find that order
+              We couldn&apos;t find that order
             </p>
             <p className="max-w-sm text-sm text-muted-foreground">
               Double-check your order number and the email used at checkout, or
@@ -127,7 +169,19 @@ function TrackOrderContent() {
           </div>
         )}
 
-        {result && (
+        {status === "error" && (
+          <div className="flex flex-col items-center gap-3 rounded-xl border border-destructive/30 bg-destructive/5 py-16 text-center">
+            <AlertCircle className="h-6 w-6 text-destructive" />
+            <p className="font-medium text-foreground">
+              Couldn&apos;t look up your order
+            </p>
+            <p className="max-w-sm text-sm text-muted-foreground">
+              {errorMessage}
+            </p>
+          </div>
+        )}
+
+        {status === "found" && result && (
           <div className="flex flex-col gap-8">
             {/* Summary card */}
             <div className="rounded-xl border border-border bg-card p-6">
@@ -157,9 +211,11 @@ function TrackOrderContent() {
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-border pt-6">
-                <OrderTimeline currentIndex={idx} />
-              </div>
+              {result.status !== "Cancelled" && (
+                <div className="mt-6 border-t border-border pt-6">
+                  <OrderTimeline status={result.status} />
+                </div>
+              )}
             </div>
 
             {/* Delivery details */}
@@ -192,73 +248,80 @@ function TrackOrderContent() {
             </div>
 
             {/* Production updates + media */}
-            <div className="rounded-xl border border-border bg-card">
-              <div className="border-b border-border p-5">
-                <h2 className="font-serif text-lg font-semibold text-foreground">
-                  Production updates
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Photos and notes from our team as your order moves through
-                  each stage.
-                </p>
-              </div>
-              <div className="divide-y divide-border">
-                {result.updates.map((update, i) => (
-                  <div key={i} className="flex flex-col gap-3 p-5 sm:flex-row">
-                    <div className="flex shrink-0 items-center gap-2 sm:w-40">
-                      <span className="h-2 w-2 rounded-full bg-primary" />
-                      <p className="text-sm font-medium text-foreground">
-                        {update.stage}
-                      </p>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-xs text-muted-foreground">
-                        {update.timestamp}
-                      </p>
-                      <p className="mt-1 text-sm text-foreground">
-                        {update.note}
-                      </p>
-                      {update.media && update.media.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-3">
-                          {update.media.map((m, j) => (
-                            <div
-                              key={j}
-                              className="w-32 overflow-hidden rounded-lg border border-border"
-                            >
-                              <div className="relative aspect-square bg-secondary">
-                                {m.kind === "video" ? (
-                                  <video
-                                    src={m.url}
-                                    className="h-full w-full object-cover"
-                                    muted
-                                  />
-                                ) : (
-                                  <img
-                                    src={m.url}
-                                    alt={m.caption}
-                                    className="h-full w-full object-cover"
-                                  />
-                                )}
-                                <span className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background/80 text-foreground">
+            {result.updates.length > 0 && (
+              <div className="rounded-xl border border-border bg-card">
+                <div className="border-b border-border p-5">
+                  <h2 className="font-serif text-lg font-semibold text-foreground">
+                    Production updates
+                  </h2>
+                  <p className="text-sm text-muted-foreground">
+                    Photos and notes from our team as your order moves through
+                    each stage.
+                  </p>
+                </div>
+                <div className="divide-y divide-border">
+                  {result.updates.map((update, i) => (
+                    <div
+                      key={i}
+                      className="flex flex-col gap-3 p-5 sm:flex-row"
+                    >
+                      <div className="flex shrink-0 items-center gap-2 sm:w-40">
+                        <span className="h-2 w-2 rounded-full bg-primary" />
+                        <p className="text-sm font-medium text-foreground">
+                          {update.stage}
+                        </p>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">
+                          {update.timestamp}
+                        </p>
+                        <p className="mt-1 text-sm text-foreground">
+                          {update.note}
+                        </p>
+                        {update.media.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-3">
+                            {update.media.map((m, j) => (
+                              <div
+                                key={j}
+                                className="w-32 overflow-hidden rounded-lg border border-border"
+                              >
+                                <div className="relative aspect-square bg-secondary">
                                   {m.kind === "video" ? (
-                                    <VideoIcon className="h-3 w-3" />
+                                    <video
+                                      src={m.url}
+                                      className="h-full w-full object-cover"
+                                      muted
+                                    />
                                   ) : (
-                                    <ImageIcon className="h-3 w-3" />
+                                    <img
+                                      src={m.url}
+                                      alt={m.caption ?? ""}
+                                      className="h-full w-full object-cover"
+                                    />
                                   )}
-                                </span>
+                                  <span className="absolute bottom-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-background/80 text-foreground">
+                                    {m.kind === "video" ? (
+                                      <VideoIcon className="h-3 w-3" />
+                                    ) : (
+                                      <ImageIcon className="h-3 w-3" />
+                                    )}
+                                  </span>
+                                </div>
+                                {m.caption && (
+                                  <p className="truncate p-1.5 text-[11px] text-muted-foreground">
+                                    {m.caption}
+                                  </p>
+                                )}
                               </div>
-                              <p className="truncate p-1.5 text-[11px] text-muted-foreground">
-                                {m.caption}
-                              </p>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Support CTA */}
             <div className="flex flex-col items-center gap-3 rounded-xl border border-border bg-secondary/40 p-8 text-center">

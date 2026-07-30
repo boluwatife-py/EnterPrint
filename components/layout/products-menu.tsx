@@ -25,8 +25,8 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
-import { categories } from "@/lib/data";
 import { cn } from "@/lib/utils";
+import { Category } from "@/lib/api/catalog-api";
 
 export const categoryIcons: Record<string, LucideIcon> = {
   package: Package,
@@ -88,7 +88,13 @@ function CategoryLink({
   );
 }
 
-export function ProductsMenu({ active }: { active?: boolean }) {
+export function ProductsMenu({
+  active,
+  categories,
+}: {
+  active?: boolean;
+  categories: Category[];
+}) {
   const router = useRouter();
   const packaging = packagingSlugs
     .map((slug) => categories.find((c) => c.slug === slug))
@@ -104,7 +110,7 @@ export function ProductsMenu({ active }: { active?: boolean }) {
           <NavigationMenuTrigger
             onClick={() => router.push("/products")}
             className={cn(
-              "bg-transparent! px-0! text-sm font-medium",
+              "bg-transparent! px-0! text-sm font-medium cursor-pointer",
               active ? "text-foreground" : "text-muted-foreground",
             )}
           >

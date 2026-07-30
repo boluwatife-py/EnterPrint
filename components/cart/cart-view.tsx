@@ -1,18 +1,18 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import Image from "next/image"
-import { Trash2, Upload, PenTool, ShoppingBag, ArrowRight } from "lucide-react"
-import { useCart } from "@/lib/cart-context"
-import { getProduct, computePrice } from "@/lib/data"
-import { formatNaira } from "@/lib/format"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
+import Link from "next/link";
+import Image from "next/image";
+import { Trash2, Upload, PenTool, ShoppingBag, ArrowRight } from "lucide-react";
+import { useCart } from "@/lib/cart-context";
+import type { CartItem } from "@/lib/cart-context";
+import { formatNaira } from "@/lib/utils/format";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
-const DELIVERY_FEE = 3500
+const DELIVERY_FEE = 4500;
 
 export function CartView() {
-  const { items, removeItem, updateQuantity, subtotal } = useCart()
+  const { items, removeItem, updateQuantity, subtotal } = useCart();
 
   if (items.length === 0) {
     return (
@@ -20,7 +20,9 @@ export function CartView() {
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
           <ShoppingBag className="h-7 w-7 text-muted-foreground" />
         </div>
-        <h1 className="mt-5 text-2xl font-bold text-foreground">Your cart is empty</h1>
+        <h1 className="mt-5 text-2xl font-bold text-foreground">
+          Your cart is empty
+        </h1>
         <p className="mt-2 text-muted-foreground">
           Browse our catalog and customize your first packaging or print order.
         </p>
@@ -29,18 +31,21 @@ export function CartView() {
           <ArrowRight className="ml-1 h-4 w-4" />
         </Button>
       </div>
-    )
+    );
   }
 
-  const total = subtotal + DELIVERY_FEE
+  const total = subtotal + DELIVERY_FEE;
 
   return (
     <div className="grid gap-8 lg:grid-cols-[1fr_360px]">
       <div className="space-y-4">
         {items.map((item) => {
-          const product = getProduct(item.productSlug)
+          const product = item;
           return (
-            <div key={item.id} className="flex gap-4 rounded-xl border border-border bg-card p-4">
+            <div
+              key={item.id}
+              className="flex gap-4 rounded-xl border border-border bg-card p-4"
+            >
               <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-secondary">
                 <Image
                   src={item.image || "/placeholder.svg"}
@@ -62,8 +67,12 @@ export function CartView() {
                     </Link>
                     <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1">
                       {item.optionLabels.map((o) => (
-                        <span key={o.label} className="text-xs text-muted-foreground">
-                          {o.label}: <span className="text-foreground">{o.value}</span>
+                        <span
+                          key={o.label}
+                          className="text-xs text-muted-foreground"
+                        >
+                          {o.label}:{" "}
+                          <span className="text-foreground">{o.value}</span>
                         </span>
                       ))}
                     </div>
@@ -83,9 +92,10 @@ export function CartView() {
                     <Badge variant="secondary" className="gap-1">
                       <PenTool className="h-3 w-3" /> Design requested
                     </Badge>
-                  ) : item.artwork.fileNames && item.artwork.fileNames.length > 0 ? (
+                  ) : item.artwork.files && item.artwork.files.length > 0 ? (
                     <Badge variant="secondary" className="gap-1">
-                      <Upload className="h-3 w-3" /> {item.artwork.fileNames.length} file(s) uploaded
+                      <Upload className="h-3 w-3" /> {item.artwork.files.length}{" "}
+                      file(s) uploaded
                     </Badge>
                   ) : (
                     <Badge variant="secondary" className="gap-1 text-accent">
@@ -95,10 +105,15 @@ export function CartView() {
                 </div>
 
                 <div className="mt-auto flex flex-wrap items-end justify-between gap-3 pt-3">
-                  <QuantityControl item={item} product={product} updateQuantity={updateQuantity} />
+                  <QuantityControl
+                    item={item}
+                    product={product}
+                    updateQuantity={updateQuantity}
+                  />
                   <div className="text-right">
                     <p className="text-xs text-muted-foreground">
-                      {formatNaira(item.unitPrice)} × {item.quantity.toLocaleString()}
+                      {formatNaira(item.unitPrice)} ×{" "}
+                      {item.quantity.toLocaleString()}
                     </p>
                     <p className="font-bold text-foreground">
                       {formatNaira(item.unitPrice * item.quantity)}
@@ -107,7 +122,7 @@ export function CartView() {
                 </div>
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -118,29 +133,43 @@ export function CartView() {
           <dl className="mt-4 space-y-2.5 text-sm">
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Subtotal</dt>
-              <dd className="font-medium text-foreground">{formatNaira(subtotal)}</dd>
+              <dd className="font-medium text-foreground">
+                {formatNaira(subtotal)}
+              </dd>
             </div>
             <div className="flex justify-between">
               <dt className="text-muted-foreground">Delivery (est.)</dt>
-              <dd className="font-medium text-foreground">{formatNaira(DELIVERY_FEE)}</dd>
+              <dd className="font-medium text-foreground">
+                {formatNaira(DELIVERY_FEE)}
+              </dd>
             </div>
             <div className="flex justify-between border-t border-border pt-3">
               <dt className="font-semibold text-foreground">Total</dt>
-              <dd className="text-xl font-bold text-foreground">{formatNaira(total)}</dd>
+              <dd className="text-xl font-bold text-foreground">
+                {formatNaira(total)}
+              </dd>
             </div>
           </dl>
 
-          <Button render={<Link href="/checkout" />} size="lg" className="mt-5 h-12 w-full text-base">
+          <Button
+            render={<Link href="/checkout" />}
+            size="lg"
+            className="mt-5 h-12 w-full text-base"
+          >
             Proceed to Checkout
             <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
-          <Button render={<Link href="/products" />} variant="ghost" className="mt-2 w-full">
+          <Button
+            render={<Link href="/products" />}
+            variant="ghost"
+            className="mt-2 w-full"
+          >
             Continue shopping
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function QuantityControl({
@@ -148,24 +177,23 @@ function QuantityControl({
   product,
   updateQuantity,
 }: {
-  item: ReturnType<typeof useCart>["items"][number]
-  product: ReturnType<typeof getProduct>
-  updateQuantity: ReturnType<typeof useCart>["updateQuantity"]
+  item: CartItem;
+  product: CartItem;
+  updateQuantity: ReturnType<typeof useCart>["updateQuantity"];
 }) {
-  if (!product) return null
-  const tiers = [...product.quantityTiers].sort((a, b) => a.qty - b.qty)
+  const tiers = [...product.quantityTiers].sort((a, b) => a.qty - b.qty);
 
   return (
     <div className="flex flex-wrap gap-1.5">
       {tiers.map((tier) => {
-        const isActive = item.quantity === tier.qty
+        const isActive = item.quantity === tier.qty;
+
         return (
           <button
             key={tier.qty}
             type="button"
             onClick={() => {
-              const { unitPrice } = computePrice(product, item.options, tier.qty)
-              updateQuantity(item.id, tier.qty, unitPrice)
+              updateQuantity(item.id, tier.qty, tier.unitPrice);
             }}
             className={
               "rounded-md border px-2.5 py-1 text-xs font-medium transition-colors " +
@@ -176,8 +204,8 @@ function QuantityControl({
           >
             {tier.qty.toLocaleString()}
           </button>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

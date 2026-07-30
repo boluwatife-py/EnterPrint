@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/lib/api";
+import { apiFetch } from "@/lib/api/api";
 import {
   createAuthFlowError,
   persistChallengeId,
@@ -94,10 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (typeof window === "undefined") return;
       if (nextUser && nextToken) {
-        window.localStorage.setItem(
-          USER_STORAGE_KEY,
-          JSON.stringify(nextUser),
-        );
+        window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(nextUser));
         window.localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, nextToken);
       } else {
         window.localStorage.removeItem(USER_STORAGE_KEY);
@@ -246,19 +243,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const updateUser = useCallback(
-    (patch: Partial<AuthUser>) => {
-      setUser((prev) => {
-        if (!prev) return prev;
-        const next = { ...prev, ...patch };
-        if (typeof window !== "undefined") {
-          window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(next));
-        }
-        return next;
-      });
-    },
-    [],
-  );
+  const updateUser = useCallback((patch: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  }, []);
 
   const refreshSession = useCallback(async () => {
     try {

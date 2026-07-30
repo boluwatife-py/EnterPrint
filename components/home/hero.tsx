@@ -1,11 +1,26 @@
-import Link from "next/link"
-import Image from "next/image"
-import { Search } from "lucide-react"
-import { Button } from "@/components/ui/button"
+"use client";
 
-const quickLinks = ["Boxes", "Business Cards", "Labels", "Banners", "Stickers"]
+import { useState, type FormEvent } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const quickLinks = ["Boxes", "Business Cards", "Labels", "Banners", "Stickers"];
 
 export function Hero() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+
+  function handleSearch(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const trimmed = query.trim();
+    router.push(
+      trimmed ? `/products?q=${encodeURIComponent(trimmed)}` : "/products",
+    );
+  }
+
   return (
     <section className="relative overflow-hidden border-b border-border bg-card">
       <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:py-24">
@@ -20,22 +35,31 @@ export function Hero() {
             Ordered online, shipped to your doorstep.
           </p>
 
-          <label className="mt-8 w-full max-w-lg">
-            <span className="mb-2 block text-sm font-medium text-foreground">
+          <div className="mt-8 w-full max-w-lg">
+            <label
+              htmlFor="hero-search"
+              className="mb-2 block text-sm font-medium text-foreground"
+            >
               What would you like to order today?
-            </span>
-            <div className="flex items-center gap-2 border border-border bg-background px-4 py-3.5 focus-within:ring-2 focus-within:ring-accent">
+            </label>
+            <form
+              onSubmit={handleSearch}
+              className="flex items-center gap-2 border border-border bg-background px-4 py-3.5 focus-within:ring-2 focus-within:ring-accent"
+            >
               <Search className="h-4 w-4 shrink-0 text-muted-foreground" />
               <input
+                id="hero-search"
                 type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search for boxes, business cards, labels, banners…"
                 className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
               />
-              <Button size="sm" className="h-8 shrink-0 px-4">
-                Search
+              <Button type="submit" size="sm" className="h-8 shrink-0 px-4">
+                Go
               </Button>
-            </div>
-          </label>
+            </form>
+          </div>
 
           <div className="mt-4 flex flex-wrap gap-2">
             {quickLinks.map((label) => (
@@ -77,5 +101,5 @@ export function Hero() {
         </div>
       </div>
     </section>
-  )
+  );
 }

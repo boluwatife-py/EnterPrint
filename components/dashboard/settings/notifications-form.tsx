@@ -7,8 +7,8 @@ import {
   getNotifications,
   updateNotifications,
   type NotificationPreferences,
-} from "@/lib/account-api";
-import type { ApiError } from "@/lib/api";
+} from "@/lib/api/account-api";
+import type { ApiError } from "@/lib/api/api";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 
@@ -44,10 +44,10 @@ const PREFS: { key: PrefKey; label: string; description: string }[] = [
 ];
 
 const DEFAULT_STATE: NotificationPreferences = {
-  orderUpdates: { email: true, sms: true },
-  proofReady: { email: true, sms: true },
-  deliveryUpdates: { email: true, sms: false },
-  messages: { email: true, sms: false },
+  orderUpdates: { email: false, sms: false },
+  proofReady: { email: false, sms: false },
+  deliveryUpdates: { email: false, sms: false },
+  messages: { email: false, sms: false },
   promotions: { email: false, sms: false },
 };
 

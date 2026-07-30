@@ -15,8 +15,9 @@ import {
   Package,
   MapPin,
   Settings,
-  ChevronDown,
   LogOut,
+  LogIn,
+  UserPlus,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "./logo";
@@ -49,14 +50,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth-context";
-import { categories } from "@/lib/data";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
+import { Category } from "@/lib/api/catalog-api";
 
 /** Single source of truth for every dashboard section. */
 const dashboardNav: { href: string; label: string; icon: LucideIcon }[] = [
@@ -121,67 +122,126 @@ function HeaderIconLink({
   );
 }
 
-/** Desktop "Dashboard" dropdown exposing every account section. */
+/**
+ * Desktop account control: a clickable user icon that goes straight to
+ * `/dashboard` (the protected-route guard bounces signed-out users to
+ * login on its own), plus a separate chevron that opens a dropdown —
+ * either the full dashboard nav, or a Login / Sign up prompt.
+ */
 function DashboardMenu({ pathname }: { pathname: string }) {
-  const { logout } = useAuth();
+  const { user, isAuthenticated, isHydrated, logout } = useAuth();
   const active = pathname.startsWith("/dashboard");
+  const [open, setOpen] = useState(false);
+  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const openMenu = () => {
+    if (closeTimer.current) {
+      clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    setOpen(true);
+  };
+  const scheduleClose = () => {
+    closeTimer.current = setTimeout(() => setOpen(false), 150);
+  };
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <Tooltip>
         <TooltipTrigger
           render={
             <DropdownMenuTrigger
+              nativeButton={false}
+              onMouseEnter={openMenu}
+              onMouseLeave={scheduleClose}
               render={
                 <Button
+                  render={
+                    <Link href="/dashboard" aria-label="Go to your dashboard" />
+                  }
                   variant={active ? "secondary" : "ghost"}
-                  size="sm"
-                  className="gap-1.5"
-                  aria-label="Open dashboard menu"
+                  size="icon"
+                  className={cn(!isHydrated && "opacity-0")}
                 />
               }
             />
           }
         >
           <User className="h-5 w-5" />
-          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
         </TooltipTrigger>
-        <TooltipContent>Your dashboard</TooltipContent>
+        <TooltipContent>
+          {isAuthenticated ? "Your dashboard" : "Log in"}
+        </TooltipContent>
       </Tooltip>
 
-      <DropdownMenuContent align="end" sideOffset={8} className="w-56">
-        <p className="px-1.5 py-1 text-xs font-medium text-muted-foreground">
-          Dashboard
-        </p>
-        {dashboardNav.map((item) => {
-          const Icon = item.icon;
-          return (
-            <DropdownMenuItem
-              key={item.href}
-              render={<Link href={item.href} />}
-              className={cn(
-                isDashboardSectionActive(pathname, item.href) &&
-                  "bg-secondary text-foreground",
-              )}
-            >
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              {item.label}
+      <DropdownMenuContent
+        align="end"
+        sideOffset={8}
+        className={cn(
+          "transition-all duration-150", // Optional: smooths out width hydration shifts
+          isAuthenticated ? "w-64" : "w-24",
+        )}
+        onMouseEnter={openMenu}
+        onMouseLeave={scheduleClose}
+      >
+        {isAuthenticated ? (
+          <>
+            <div className="flex items-center gap-2.5 px-1.5 py-1.5">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary text-xs font-semibold text-foreground">
+                {user?.initials}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-medium text-foreground">
+                  {user?.name}
+                </span>
+              </span>
+            </div>
+            <DropdownMenuSeparator />
+            {dashboardNav.map((item) => {
+              const Icon = item.icon;
+              return (
+                <DropdownMenuItem
+                  key={item.href}
+                  render={<Link href={item.href} />}
+                  className={cn(
+                    isDashboardSectionActive(pathname, item.href) &&
+                      "bg-secondary text-foreground",
+                  )}
+                >
+                  <Icon className="h-4 w-4 text-muted-foreground" />
+                  {item.label}
+                </DropdownMenuItem>
+              );
+            })}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem variant="destructive" onClick={logout}>
+              <LogOut className="h-4 w-4" />
+              Sign out
             </DropdownMenuItem>
-          );
-        })}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={logout}>
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem render={<Link href="/auth/login" />}>
+              Log in
+            </DropdownMenuItem>
+            <DropdownMenuItem render={<Link href="/auth/signup" />}>
+              Sign up
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
 
-export function SiteHeader() {
+type SiteHeaderProps = {
+  categories: Category[];
+};
+
+export function SiteHeader({ categories }: SiteHeaderProps) {
   const pathname = usePathname();
   const { itemCount } = useCart();
+  const { isAuthenticated, logout } = useAuth();
   const [open, setOpen] = useState(false);
 
   const packaging = packagingSlugs
@@ -200,7 +260,10 @@ export function SiteHeader() {
             className="hidden items-center gap-6 md:flex"
             aria-label="Main navigation"
           >
-            <ProductsMenu active={pathname.startsWith("/products")} />
+            <ProductsMenu
+              active={pathname.startsWith("/products")}
+              categories={categories}
+            />
             <Link
               href="/design-request"
               className={cn(
@@ -318,28 +381,65 @@ export function SiteHeader() {
                 className="flex-1 overflow-y-auto overscroll-contain px-2 py-4"
                 aria-label="Mobile navigation"
               >
-                <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Your dashboard
-                </p>
-                {dashboardNav.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
-                        isDashboardSectionActive(pathname, item.href)
-                          ? "bg-muted text-foreground"
-                          : "text-muted-foreground",
-                      )}
+                {isAuthenticated ? (
+                  <>
+                    <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Your dashboard
+                    </p>
+                    {dashboardNav.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setOpen(false)}
+                          className={cn(
+                            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors hover:bg-muted",
+                            isDashboardSectionActive(pathname, item.href)
+                              ? "bg-muted text-foreground"
+                              : "text-muted-foreground",
+                          )}
+                        >
+                          <Icon className="h-4 w-4" />
+                          {item.label}
+                        </Link>
+                      );
+                    })}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOpen(false);
+                        logout();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm font-medium text-destructive transition-colors hover:bg-muted"
                     >
-                      <Icon className="h-4 w-4" />
-                      {item.label}
+                      <LogOut className="h-4 w-4" />
+                      Sign out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p className="px-3 pb-1 pt-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Account
+                    </p>
+                    <Link
+                      href="/auth/login"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+                    >
+                      <LogIn className="h-4 w-4" />
+                      Log in
                     </Link>
-                  );
-                })}
+                    <Link
+                      href="/auth/signup"
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted"
+                    >
+                      <UserPlus className="h-4 w-4" />
+                      Sign up
+                    </Link>
+                  </>
+                )}
 
                 <div className="my-2 border-t border-border" />
 

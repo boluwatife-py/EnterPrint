@@ -2,8 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Address, AddressInput } from "@/lib/account-api";
-import { NIGERIAN_STATES } from "@/lib/account-api";
+import type { Address, AddressInput } from "@/lib/api/account-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,21 +152,12 @@ export function AddressFormDialog({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="addr-state">State</Label>
-              <Select
-                value={form.state || undefined}
-                onValueChange={(value) => update("state", value ?? "")}
-              >
-                <SelectTrigger id="addr-state">
-                  <SelectValue placeholder="Select state" />
-                </SelectTrigger>
-                <SelectContent>
-                  {NIGERIAN_STATES.map((state) => (
-                    <SelectItem key={state} value={state}>
-                      {state}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                id="addr-state"
+                value={form.state}
+                onChange={(e) => update("state", e.target.value)}
+                placeholder="State"
+              ></Input>
             </div>
           </div>
 
@@ -198,11 +188,7 @@ export function AddressFormDialog({
             Cancel
           </Button>
           <Button disabled={!isValid || saving} onClick={handleSubmit}>
-            {saving
-              ? "Saving…"
-              : isEditing
-                ? "Save changes"
-                : "Add address"}
+            {saving ? "Saving…" : isEditing ? "Save changes" : "Add address"}
           </Button>
         </DialogFooter>
       </DialogContent>

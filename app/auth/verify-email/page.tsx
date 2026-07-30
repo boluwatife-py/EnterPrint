@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import { Mail } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import {
   InputOTP,
   InputOTPGroup,
@@ -14,16 +13,21 @@ import {
 } from "@/components/ui/input-otp";
 import { useAuth } from "@/lib/auth-context";
 import { readPendingEmail, clearPendingEmail } from "@/lib/auth-errors";
+import { withRedirectParam } from "@/lib/auth-redirect";
 
 const CODE_LENGTH = 6;
 
-export default function VerifyEmailPage() {
+function VerifyEmailPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { verifyEmail } = useAuth();
   const [email, setEmail] = useState<string | null>(null);
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTo = rawRedirect ?? "/dashboard";
 
   useEffect(() => {
     setEmail(readPendingEmail());
@@ -41,7 +45,7 @@ export default function VerifyEmailPage() {
     try {
       await verifyEmail(email, value);
       clearPendingEmail();
-      router.replace("/dashboard");
+      router.replace(redirectTo);
     } catch (submitError) {
       setError(
         submitError instanceof Error
@@ -66,7 +70,7 @@ export default function VerifyEmailPage() {
         <p className="text-sm text-muted-foreground">
           Entered the wrong email?{" "}
           <Link
-            href="/auth/login"
+            href={withRedirectParam("/auth/login", rawRedirect)}
             className="font-medium text-foreground hover:text-primary"
           >
             Sign in
@@ -126,6 +130,39 @@ export default function VerifyEmailPage() {
           {loading ? "Verifying…" : "Verify email"}
         </Button>
       </form>
+    </AuthShell>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<VerifyEmailPageSkeleton />}>
+      <VerifyEmailPageContent />
+    </Suspense>
+  );
+}
+
+function VerifyEmailPageSkeleton() {
+  return (
+    <AuthShell
+      title="Verify your email"
+      description="Preparing your secure verification experience."
+      footer={
+        <p className="text-sm text-muted-foreground">
+          Entered the wrong email?{" "}
+          <Link
+            href="/auth/login"
+            className="font-medium text-foreground hover:text-primary"
+          >
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <div className="space-y-5 rounded-xl border border-border/70 bg-background/70 p-6">
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      </div>
     </AuthShell>
   );
 }

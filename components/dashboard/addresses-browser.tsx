@@ -2,7 +2,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, MapPin, MoreHorizontal, Pencil, Plus, Star, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  MapPin,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Star,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 import {
@@ -12,8 +20,8 @@ import {
   updateAddress,
   type Address,
   type AddressInput,
-} from "@/lib/account-api";
-import type { ApiError } from "@/lib/api";
+} from "@/lib/api/account-api";
+import type { ApiError } from "@/lib/api/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -83,7 +91,9 @@ export function AddressesBrowser() {
         toast.success("Address added");
       }
     } catch (error) {
-      toast.error((error as ApiError)?.message ?? "Could not save the address.");
+      toast.error(
+        (error as ApiError)?.message ?? "Could not save the address.",
+      );
       throw error;
     }
   }
@@ -134,7 +144,8 @@ export function AddressesBrowser() {
     <div>
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {addresses.length} saved {addresses.length === 1 ? "address" : "addresses"}
+          {addresses.length} saved{" "}
+          {addresses.length === 1 ? "address" : "addresses"}
         </p>
         <Button size="sm" onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
@@ -155,7 +166,9 @@ export function AddressesBrowser() {
                     <MapPin className="h-4 w-4" />
                   </span>
                   <div>
-                    <p className="text-sm font-medium text-foreground">{address.title}</p>
+                    <p className="text-sm font-medium text-foreground">
+                      {address.title}
+                    </p>
                     {address.isDefault && (
                       <Badge variant="secondary" className="mt-1">
                         Default
@@ -182,7 +195,9 @@ export function AddressesBrowser() {
                       Edit
                     </DropdownMenuItem>
                     {!address.isDefault && (
-                      <DropdownMenuItem onClick={() => handleSetDefault(address)}>
+                      <DropdownMenuItem
+                        onClick={() => handleSetDefault(address)}
+                      >
                         <Star className="mr-2 h-4 w-4" />
                         Set as default
                       </DropdownMenuItem>

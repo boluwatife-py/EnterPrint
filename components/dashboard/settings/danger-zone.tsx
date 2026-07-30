@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { deleteAccount } from "@/lib/account-api";
-import type { ApiError } from "@/lib/api";
+import { deleteAccount } from "@/lib/api/account-api";
+import type { ApiError } from "@/lib/api/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,8 +49,8 @@ export function DangerZone() {
         Danger zone
       </h2>
       <p className="mt-1 text-sm text-muted-foreground">
-        Deleting your account removes your profile, saved addresses, and
-        order history. This can't be undone.
+        Deleting your account removes your profile, saved addresses, and order
+        history. This can't be undone.
       </p>
 
       <div className="mt-5 flex items-center justify-between rounded-lg border border-border bg-secondary/30 p-4">
@@ -59,8 +59,7 @@ export function DangerZone() {
             Delete {user?.name ? `${user.name}'s` : "your"} account
           </p>
           <p className="text-xs text-muted-foreground">
-            All data associated with this account will be permanently
-            removed.
+            All data associated with this account will be permanently removed.
           </p>
         </div>
         <Button variant="destructive" onClick={() => setOpen(true)}>
@@ -90,9 +89,7 @@ export function DangerZone() {
               />
             </div>
             <div className="grid gap-1.5">
-              <Label htmlFor="confirm-delete">
-                Type DELETE to confirm
-              </Label>
+              <Label htmlFor="confirm-delete">Type DELETE to confirm</Label>
               <Input
                 id="confirm-delete"
                 value={confirmText}

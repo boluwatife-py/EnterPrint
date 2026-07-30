@@ -10,13 +10,17 @@ import {
   disableTwoFA,
   enableTwoFA,
   type TwoFAEnableResponse,
-} from "@/lib/account-api";
-import type { ApiError } from "@/lib/api";
+} from "@/lib/api/account-api";
+import type { ApiError } from "@/lib/api/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 import {
   Dialog,
   DialogContent,
@@ -27,8 +31,8 @@ import {
 } from "@/components/ui/dialog";
 
 // Server rule: ≥8 chars with upper, lower, digit and symbol.
-const STRONG =
-  /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const STRONG = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const OTP_LENGTH = 6;
 
 export function SecurityForm() {
   const { user, authFetch, updateUser } = useAuth();
@@ -43,7 +47,9 @@ export function SecurityForm() {
   const twoFactor = Boolean(user?.requires2FA);
   const [setupOpen, setSetupOpen] = useState(false);
   const [disableOpen, setDisableOpen] = useState(false);
-  const [enrollment, setEnrollment] = useState<TwoFAEnableResponse | null>(null);
+  const [enrollment, setEnrollment] = useState<TwoFAEnableResponse | null>(
+    null,
+  );
   const [otp, setOtp] = useState("");
   const [twoFABusy, setTwoFABusy] = useState(false);
 
@@ -86,11 +92,11 @@ export function SecurityForm() {
     }
   }
 
-  async function confirmEnable() {
-    if (otp.length !== 6) return;
+  async function confirmEnable(value: string) {
+    if (value.length !== OTP_LENGTH || twoFABusy) return;
     setTwoFABusy(true);
     try {
-      const { requires2FA } = await confirmTwoFA(authFetch, otp);
+      const { requires2FA } = await confirmTwoFA(authFetch, value);
       updateUser({ requires2FA });
       setSetupOpen(false);
       setEnrollment(null);
@@ -98,22 +104,24 @@ export function SecurityForm() {
       toast.success("Two-factor authentication enabled");
     } catch (error) {
       toast.error((error as ApiError)?.message ?? "That code didn't match.");
+      setOtp("");
     } finally {
       setTwoFABusy(false);
     }
   }
 
-  async function confirmDisable() {
-    if (otp.length !== 6) return;
+  async function confirmDisable(value: string) {
+    if (value.length !== OTP_LENGTH || twoFABusy) return;
     setTwoFABusy(true);
     try {
-      const { requires2FA } = await disableTwoFA(authFetch, otp);
+      const { requires2FA } = await disableTwoFA(authFetch, value);
       updateUser({ requires2FA });
       setDisableOpen(false);
       setOtp("");
       toast.success("Two-factor authentication disabled");
     } catch (error) {
       toast.error((error as ApiError)?.message ?? "That code didn't match.");
+      setOtp("");
     } finally {
       setTwoFABusy(false);
     }
@@ -168,7 +176,9 @@ export function SecurityForm() {
               className={mismatch ? "border-destructive" : undefined}
             />
             {mismatch && (
-              <p className="text-xs text-destructive">Passwords don&apos;t match.</p>
+              <p className="text-xs text-destructive">
+                Passwords don&apos;t match.
+              </p>
             )}
           </div>
         </div>
@@ -228,7 +238,12 @@ export function SecurityForm() {
           <div className="flex flex-col items-center gap-4 py-2">
             {enrollment?.otpauthUrl && (
               <div className="rounded-lg border border-border bg-background p-3">
-                <QRCodeSVG value={enrollment.otpauthUrl} size={160} />
+                <QRCodeSVG
+                  value={enrollment.otpauthUrl}
+                  size={160}
+                  bgColor="transparent"
+                  fgColor="#000000"
+                />
               </div>
             )}
             {enrollment?.secret && (
@@ -241,7 +256,17 @@ export function SecurityForm() {
                 </p>
               </div>
             )}
-            <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+            <InputOTP
+              maxLength={OTP_LENGTH}
+              value={otp}
+              onChange={(value) => {
+                setOtp(value);
+                if (value.length === OTP_LENGTH) {
+                  void confirmEnable(value);
+                }
+              }}
+              disabled={twoFABusy}
+            >
               <InputOTPGroup>
                 {[0, 1, 2, 3, 4, 5].map((i) => (
                   <InputOTPSlot key={i} index={i} />
@@ -255,8 +280,8 @@ export function SecurityForm() {
               Cancel
             </Button>
             <Button
-              onClick={confirmEnable}
-              disabled={otp.length !== 6 || twoFABusy}
+              onClick={() => confirmEnable(otp)}
+              disabled={otp.length !== OTP_LENGTH || twoFABusy}
             >
               {twoFABusy ? "Verifying…" : "Confirm & enable"}
             </Button>
@@ -278,7 +303,17 @@ export function SecurityForm() {
           </DialogHeader>
 
           <div className="flex justify-center py-2">
-            <InputOTP maxLength={6} value={otp} onChange={setOtp}>
+            <InputOTP
+              maxLength={OTP_LENGTH}
+              value={otp}
+              onChange={(value) => {
+                setOtp(value);
+                if (value.length === OTP_LENGTH) {
+                  void confirmDisable(value);
+                }
+              }}
+              disabled={twoFABusy}
+            >
               <InputOTPGroup>
                 {[0, 1, 2, 3, 4, 5].map((i) => (
                   <InputOTPSlot key={i} index={i} />
@@ -293,8 +328,8 @@ export function SecurityForm() {
             </Button>
             <Button
               variant="destructive"
-              onClick={confirmDisable}
-              disabled={otp.length !== 6 || twoFABusy}
+              onClick={() => confirmDisable(otp)}
+              disabled={otp.length !== OTP_LENGTH || twoFABusy}
             >
               {twoFABusy ? "Disabling…" : "Disable"}
             </Button>

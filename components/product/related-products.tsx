@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
-import type { Product } from "@/lib/data";
+import type { Product } from "@/lib/api/catalog-api";
 
 const PAGE_SIZE = 4;
 

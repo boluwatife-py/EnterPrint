@@ -6,6 +6,7 @@
 // live backend (see backend-endpoint.md / openapi.json), NOT the old mock draft.
 
 import type { AuthUser } from "@/lib/auth-context";
+import type { Order } from "@/lib/api/orders-api";
 
 /** A token-injecting fetch, shaped like `useAuth().authFetch`. */
 export type AuthFetch = <T>(
@@ -17,6 +18,26 @@ export type AuthFetch = <T>(
     signal?: AbortSignal;
   },
 ) => Promise<T>;
+
+/* -------------------------------------------------------------------------- */
+/* Dashboard                                                                  */
+/* -------------------------------------------------------------------------- */
+
+export type DashboardSummary = {
+  /** Orders not yet Delivered/Cancelled and not still Pending Payment. */
+  openOrders: number;
+  /** Orders with a proof awaiting the customer's approval. */
+  needsReview: number;
+  /** Count of support threads with unread messages (not total threads). */
+  unreadThreadCount: number;
+  /** Newest 3 orders, full shape -- same as GET /orders items. */
+  recentOrders: Order[];
+};
+
+/** GET /account/dashboard — aggregate stats + recent orders for the dashboard home. */
+export function getDashboard(authFetch: AuthFetch) {
+  return authFetch<DashboardSummary>("/account/dashboard");
+}
 
 /* -------------------------------------------------------------------------- */
 /* Profile                                                                    */
@@ -146,15 +167,6 @@ export type AddressInput = {
   country?: string;
   isDefault?: boolean;
 };
-
-export const NIGERIAN_STATES = [
-  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue",
-  "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu",
-  "FCT (Abuja)", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina",
-  "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo",
-  "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara",
-] as const;
-
 /** GET /addresses — plain array, default first. */
 export function listAddresses(authFetch: AuthFetch) {
   return authFetch<Address[]>("/addresses");

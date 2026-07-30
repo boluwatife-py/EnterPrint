@@ -1,17 +1,24 @@
-// components/dashboard/order-timeline.tsx
 "use client";
 
 import { Check } from "lucide-react";
-import { PRODUCTION_STAGES } from "@/lib/production-stages";
+import { PRODUCTION_STAGES, stageIndex } from "@/lib/production-stages";
 import { cn } from "@/lib/utils";
 
-export function OrderTimeline({ currentIndex }: { currentIndex: number }) {
+export function OrderTimeline({ status, hasPendingProof }: { status: string; hasPendingProof?: boolean }) {
+  const approvalIndex = PRODUCTION_STAGES.indexOf("Approval");
+  const currentIndex = hasPendingProof ? approvalIndex - 1 : stageIndex(status);
   return (
     <div className="overflow-x-auto">
       <div className="flex min-w-160 items-start sm:min-w-0">
         {PRODUCTION_STAGES.map((stage, i) => {
-          const done = i < currentIndex;
-          const active = i === currentIndex;
+          // The order's current status is itself a *completed* milestone,
+          // not an in-progress one -- so it (and everything before it)
+          // renders as "done," and it's the *next* stage that renders as
+          // "active" (outlined, awaiting). Off-by-one from a naive i ===
+          // currentIndex read, which would show the just-completed step
+          // as merely "in progress" instead of checked off.
+          const done = i <= currentIndex;
+          const active = i === currentIndex + 1;
           return (
             <div
               key={stage}

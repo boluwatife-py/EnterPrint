@@ -28,7 +28,7 @@ export const statusFilters: StatusFilter[] = [
   {
     slug: "awaiting-proof",
     label: "Awaiting proof",
-    matches: (s) => /approval|proof/i.test(s),
+    matches: (s) => /approval/i.test(s),
   },
   {
     slug: "in-production",
@@ -38,12 +38,12 @@ export const statusFilters: StatusFilter[] = [
   {
     slug: "shipped",
     label: "Shipped",
-    matches: (s) => /dispatch|shipped|in transit/i.test(s),
+    matches: (s) => /dispatch/i.test(s),
   },
   {
     slug: "delivered",
     label: "Delivered",
-    matches: (s) => /delivered/i.test(s),
+    matches: (s) => /delivery/i.test(s),
   },
   {
     slug: "cancelled",
@@ -51,3 +51,14 @@ export const statusFilters: StatusFilter[] = [
     matches: (s) => /cancel/i.test(s),
   },
 ];
+
+export function activeStageLabel(
+  status: string,
+  hasPendingProof?: boolean,
+): string {
+  if (status === "Cancelled") return "Cancelled";
+  if (status === "Pending Payment") return "Awaiting payment";
+  if (hasPendingProof) return "Approval";
+  const idx = stageIndex(status);
+  return PRODUCTION_STAGES[Math.min(idx + 1, PRODUCTION_STAGES.length - 1)];
+}

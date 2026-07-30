@@ -40,18 +40,6 @@ export default function DesignRequestPage() {
               </li>
             ))}
           </ul>
-
-          <div className="mt-8 overflow-hidden rounded-2xl border border-border">
-            <div className="relative aspect-16/10">
-              <Image
-                src="/design-studio.png"
-                alt="EnterPrint designer creating packaging artwork"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover"
-              />
-            </div>
-          </div>
         </div>
 
         <DesignRequestForm />

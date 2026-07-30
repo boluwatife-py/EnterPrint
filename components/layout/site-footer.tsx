@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "./logo";
-import { categories } from "@/lib/data";
 import { Shield, Truck, CreditCard, Headphones } from "lucide-react";
+import { Category } from "@/lib/api/catalog-api";
 
 const trust = [
   { icon: Truck, label: "Nationwide & global delivery" },
@@ -9,8 +9,10 @@ const trust = [
   { icon: CreditCard, label: "Secure payments" },
   { icon: Headphones, label: "Dedicated support" },
 ];
-
-export function SiteFooter() {
+type SiteFooterProps = {
+  categories: Category[];
+};
+export async function SiteFooter({ categories }: SiteFooterProps) {
   return (
     <footer className="mt-auto border-t border-border bg-card">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

@@ -1,12 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  UserRound,
-  ShieldCheck,
-  Bell,
-  AlertTriangle,
-} from "lucide-react";
+import { UserRound, ShieldCheck, Bell, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ProfileForm } from "@/components/dashboard/settings/profile-form";
 import { SecurityForm } from "@/components/dashboard/settings/security-form";
@@ -51,7 +46,7 @@ export default function SettingsPage() {
                 type="button"
                 onClick={() => setActive(tab.slug)}
                 className={cn(
-                  "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors lg:shrink",
+                  "flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium transition-colors lg:shrink cursor-pointer",
                   isActive
                     ? "bg-secondary text-foreground"
                     : "text-muted-foreground hover:bg-secondary/60 hover:text-foreground",

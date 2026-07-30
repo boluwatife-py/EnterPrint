@@ -1,5 +1,5 @@
 // app/dashboard/orders/page.tsx
-import { OrdersBrowser } from "@/components/dashboard/orders-browser";
+import { OrdersBrowser } from "@/components/dashboard/orders/orders-browser";
 
 export default function DashboardOrdersPage() {
   return (

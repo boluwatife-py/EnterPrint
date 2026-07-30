@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { getAuthRedirectPath } from "@/lib/auth-errors";
+import { withRedirectParam } from "@/lib/auth-redirect";
 import { toast } from "sonner";
 
 function LoginPageContent() {
@@ -23,7 +24,11 @@ function LoginPageContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const redirectTo = searchParams.get("redirect") ?? "/dashboard";
+  // Keep the raw value (possibly null) for propagating onto other auth
+  // pages/links, and a defaulted version for the final "where do we
+  // actually send them" navigation.
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTo = rawRedirect ?? "/dashboard";
   const message = searchParams.get("message");
 
   useEffect(() => {
@@ -54,7 +59,9 @@ function LoginPageContent() {
     } catch (submitError) {
       const redirectPath = getAuthRedirectPath(submitError);
       if (redirectPath) {
-        router.replace(redirectPath);
+        // Carry the original destination into verify-email / 2fa-challenge
+        // so it comes back here (then onward) once that step is done.
+        router.replace(withRedirectParam(redirectPath, rawRedirect));
         return;
       }
 
@@ -76,7 +83,7 @@ function LoginPageContent() {
         <p className="text-sm text-muted-foreground">
           New here?{" "}
           <Link
-            href="/auth/signup"
+            href={withRedirectParam("/auth/signup", rawRedirect)}
             className="font-medium text-foreground hover:text-primary"
           >
             Create an account
@@ -103,7 +110,7 @@ function LoginPageContent() {
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             <Link
-              href="/auth/forgot-password"
+              href={withRedirectParam("/auth/forgot-password", rawRedirect)}
               className="text-sm text-muted-foreground hover:text-foreground"
             >
               Forgot password?

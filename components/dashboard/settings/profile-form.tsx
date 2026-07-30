@@ -4,8 +4,8 @@ import { useState } from "react";
 import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
-import { updateProfile } from "@/lib/account-api";
-import type { ApiError } from "@/lib/api";
+import { updateProfile } from "@/lib/api/account-api";
+import type { ApiError } from "@/lib/api/api";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,8 @@ export function ProfileForm() {
 
   const phoneValid = Boolean(phone) && isValidPhoneNumber(phone);
   const nameValid = name.trim().length >= 2;
-  const dirty = name !== (user?.name ?? "") || phone !== (user?.phoneNumber ?? "");
+  const dirty =
+    name !== (user?.name ?? "") || phone !== (user?.phoneNumber ?? "");
   const canSave = dirty && nameValid && phoneValid && !saving;
 
   async function handleSave() {
@@ -90,9 +91,6 @@ export function ProfileForm() {
             disabled
             aria-describedby="profile-email-hint"
           />
-          <p id="profile-email-hint" className="text-xs text-muted-foreground">
-            Contact support to change your email.
-          </p>
         </div>
         <div className="grid gap-1.5">
           <Label htmlFor="profile-phone">Phone</Label>

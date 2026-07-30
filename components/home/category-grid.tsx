@@ -1,14 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
 import { ArrowUpRight } from "lucide-react";
-import { categories } from "@/lib/data";
+import { listCategories } from "@/lib/api/catalog-api";
 
 const MAX_CATEGORIES = 10;
 
-// Column spans per item index, tuned so every row fills exactly —
-// no item left dangling at any breakpoint.
-// md (4 cols): rows of [2,1,1] [2,1,1] [1,1,1,1] = 4,4,4
-// lg (5 cols): rows of [2,1,1,1] [2,1,1,1] [2,3]   = 5,5,5
 const spanClasses = [
   "md:col-span-2 lg:col-span-2", // 0
   "md:col-span-1 lg:col-span-1", // 1
@@ -22,7 +18,8 @@ const spanClasses = [
   "md:col-span-1 lg:col-span-3", // 9
 ];
 
-export function CategoryGrid() {
+export async function CategoryGrid() {
+  const categories = await listCategories();
   const displayedCategories = categories.slice(0, MAX_CATEGORIES);
 
   return (
@@ -57,7 +54,7 @@ export function CategoryGrid() {
                 sizes="(max-width: 768px) 50vw, 25vw"
                 className="object-cover opacity-90 transition-transform duration-500 group-hover:scale-105"
               />
-              <div className="absolute inset-0 bg-linear-to-t from-primary/85 via-primary/40 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-primary/70 via-primary/10 to-transparent" />
             </div>
             <div className="relative z-10 mt-24">
               <h3 className="font-semibold text-primary-foreground text-balance">

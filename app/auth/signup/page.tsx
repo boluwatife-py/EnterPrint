@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import PhoneInput from "react-phone-number-input";
 import { Eye, EyeOff } from "lucide-react";
 import { AuthShell } from "@/components/auth/auth-shell";
@@ -11,9 +11,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { getAuthRedirectPath } from "@/lib/auth-errors";
+import { withRedirectParam } from "@/lib/auth-redirect";
 
-export default function SignupPage() {
+function SignupPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signup } = useAuth();
   const [form, setForm] = useState({
     name: "",
@@ -26,16 +28,19 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const rawRedirect = searchParams.get("redirect");
+  const redirectTo = rawRedirect ?? "/dashboard";
+
   useEffect(() => {
     if (typeof window !== "undefined") {
       const storedAccess = window.localStorage.getItem(
         "enterprint-auth-access-token",
       );
       if (storedAccess) {
-        router.replace("/dashboard");
+        router.replace(redirectTo);
       }
     }
-  }, [router]);
+  }, [redirectTo, router]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -59,7 +64,10 @@ export default function SignupPage() {
     } catch (submitError) {
       const redirectPath = getAuthRedirectPath(submitError);
       if (redirectPath) {
-        router.replace(redirectPath);
+        // signup() always throws REQUIRES_EMAIL_VERIFICATION on success —
+        // carry the original destination into verify-email so it comes
+        // back here (then onward) once the code is confirmed.
+        router.replace(withRedirectParam(redirectPath, rawRedirect));
         return;
       }
 
@@ -81,7 +89,7 @@ export default function SignupPage() {
         <p className="text-sm text-muted-foreground">
           Already have an account?{" "}
           <Link
-            href="/auth/login"
+            href={withRedirectParam("/auth/login", rawRedirect)}
             className="font-medium text-foreground hover:text-primary"
           >
             Log in
@@ -201,6 +209,42 @@ export default function SignupPage() {
           {loading ? "Creating account…" : "Create account"}
         </Button>
       </form>
+    </AuthShell>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<SignupPageSkeleton />}>
+      <SignupPageContent />
+    </Suspense>
+  );
+}
+
+function SignupPageSkeleton() {
+  return (
+    <AuthShell
+      title="Create your account"
+      description="Preparing your secure signup experience."
+      footer={
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link
+            href="/auth/login"
+            className="font-medium text-foreground hover:text-primary"
+          >
+            Log in
+          </Link>
+        </p>
+      }
+    >
+      <div className="space-y-4">
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+        <div className="h-10 animate-pulse rounded-lg bg-muted" />
+      </div>
     </AuthShell>
   );
 }

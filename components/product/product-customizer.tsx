@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Minus, Plus, ShoppingCart, Clock } from "lucide-react";
-import { type Product, computePrice } from "@/lib/data";
+import { type Product, estimatePrice } from "@/lib/api/catalog-api";
 import { useCart, type ArtworkInfo } from "@/lib/cart-context";
-import { formatNaira } from "@/lib/format";
+import { formatNaira } from "@/lib/utils/format";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ArtworkPicker } from "@/components/product/artwork-picker";
@@ -23,23 +23,34 @@ export function ProductCustomizer({ product }: { product: Product }) {
 
   const [selected, setSelected] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
-    for (const group of product.options) init[group.id] = group.values[0].id;
+    for (const group of product.options) {
+      // Check if group.values exists and has elements before grabbing index 0
+      if (group.values && group.values.length > 0) {
+        init[group.id] = group.values[0].id;
+      } else {
+        init[group.id] = ""; // Fallback safe default
+      }
+    }
     return init;
   });
-  const [qty, setQty] = useState(sortedTiers[0].qty);
+
+  // --- THE FIX: Safe fallback if there are no quantity tiers ---
+  const [qty, setQty] = useState(() => sortedTiers[0]?.qty ?? 1);
+  
   const [artwork, setArtwork] = useState<ArtworkInfo>({
     type: "upload",
-    fileNames: [],
+    files: [],
   });
+  const [isUploadingArtwork, setIsUploadingArtwork] = useState(false);
 
   const { unitPrice, total } = useMemo(
-    () => computePrice(product, selected, qty),
+    () => estimatePrice(product, selected, qty),
     [product, selected, qty],
   );
 
   const minDesignWords = 10;
   const isArtworkValid = useMemo(() => {
-    if (artwork.type === "upload") return (artwork.fileNames?.length ?? 0) > 0;
+    if (artwork.type === "upload") return (artwork.files?.length ?? 0) > 0;
 
     if (artwork.type === "design") {
       const wordCount = (artwork.brief ?? "")
@@ -53,13 +64,22 @@ export function ProductCustomizer({ product }: { product: Product }) {
   }, [artwork]);
 
   function optionLabelsFor(): { label: string; value: string }[] {
-    return product.options.map((group) => {
-      const value = group.values.find((v) => v.id === selected[group.id]);
-      return { label: group.label, value: value?.label ?? "" };
-    });
+    return product.options
+      .filter((group) => group.values && group.values.length > 0) // Only pass active option labels
+      .map((group) => {
+        const value = group.values.find((v) => v.id === selected[group.id]);
+        return { label: group.label, value: value?.label ?? "" };
+      });
   }
 
   function handleAddToCart() {
+    if (isUploadingArtwork) {
+      toast.error("Upload in progress", {
+        description: "Hang tight until your artwork finishes uploading.",
+      });
+      return;
+    }
+
     if (!isArtworkValid) {
       const message =
         artwork.type === "design"
@@ -76,16 +96,20 @@ export function ProductCustomizer({ product }: { product: Product }) {
       name: product.name,
       image: product.image,
       options: Object.fromEntries(
-        product.options.map((g) => {
-          const v = g.values.find((val) => val.id === selected[g.id]);
-          return [g.label, v?.label ?? ""];
-        }),
+        product.options
+          .filter((g) => g.values && g.values.length > 0)
+          .map((g) => {
+            const value = g.values.find((v) => v.id === selected[g.id]);
+            return [g.label, value?.label ?? ""];
+          }),
       ),
       optionLabels: optionLabelsFor(),
       quantity: qty,
       unitPrice,
+      quantityTiers: product.quantityTiers,
       artwork,
     });
+
     toast.success("Added to cart", {
       description: `${qty.toLocaleString()} × ${product.name}`,
       action: { label: "View cart", onClick: () => router.push("/cart") },
@@ -95,106 +119,112 @@ export function ProductCustomizer({ product }: { product: Product }) {
   return (
     <div className="space-y-6">
       {/* Options */}
-      {product.options.map((group) => (
-        <div key={group.id}>
-          <Label className="text-sm font-medium text-foreground">
-            {group.label}
-          </Label>
+      {product.options.map((group) => {
+        // --- THE FIX: Conditional check to hide grouping if values are empty ---
+        if (!group.values || group.values.length === 0) return null;
+
+        return (
+          <div key={group.id}>
+            <Label className="text-sm font-medium text-foreground">
+              {group.label}
+            </Label>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {group.values.map((value) => {
+                const active = selected[group.id] === value.id;
+                return (
+                  <button
+                    key={value.id}
+                    type="button"
+                    onClick={() =>
+                      setSelected((prev) => ({ ...prev, [group.id]: value.id }))
+                    }
+                    className={cn(
+                      "rounded-lg border px-3.5 py-2 text-left text-sm transition-colors",
+                      active
+                        ? "border-primary bg-primary/5 text-primary"
+                        : "border-border bg-card text-foreground hover:border-primary/40",
+                    )}
+                  >
+                    <span className="flex items-center gap-1.5 font-medium">
+                      {value.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Quantity tiers */}
+      {sortedTiers.length > 0 && (
+        <div>
+          <Label className="text-sm font-medium text-foreground">Quantity</Label>
           <div className="mt-2 flex flex-wrap gap-2">
-            {group.values.map((value) => {
-              const active = selected[group.id] === value.id;
+            {sortedTiers.map((tier) => {
+              const active = qty === tier.qty;
               return (
                 <button
-                  key={value.id}
+                  key={tier.qty}
                   type="button"
-                  onClick={() =>
-                    setSelected((prev) => ({ ...prev, [group.id]: value.id }))
-                  }
+                  onClick={() => setQty(tier.qty)}
                   className={cn(
-                    "rounded-lg border px-3.5 py-2 text-left text-sm transition-colors",
+                    "rounded-lg border px-3.5 py-2 text-center text-sm transition-colors",
                     active
                       ? "border-primary bg-primary/5 text-primary"
                       : "border-border bg-card text-foreground hover:border-primary/40",
                   )}
                 >
-                  <span className="flex items-center gap-1.5 font-medium">
-                    {value.label}
+                  <span className="block font-medium">
+                    {tier.qty.toLocaleString()}
                   </span>
-                  {value.description && (
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {value.description}
-                    </span>
-                  )}
+                  <span className="mt-0.5 block text-xs text-muted-foreground">
+                    {formatNaira(tier.unitPrice)}/unit
+                  </span>
                 </button>
               );
             })}
           </div>
-        </div>
-      ))}
-
-      {/* Quantity tiers */}
-      <div>
-        <Label className="text-sm font-medium text-foreground">Quantity</Label>
-        <div className="mt-2 flex flex-wrap gap-2">
-          {sortedTiers.map((tier) => {
-            const active = qty === tier.qty;
-            return (
+          <div className="mt-3 flex items-center gap-3">
+            <span className="text-sm text-muted-foreground">Custom quantity</span>
+            <div className="flex items-center rounded-lg border border-border">
               <button
-                key={tier.qty}
                 type="button"
-                onClick={() => setQty(tier.qty)}
-                className={cn(
-                  "rounded-lg border px-3.5 py-2 text-center text-sm transition-colors",
-                  active
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-border bg-card text-foreground hover:border-primary/40",
-                )}
+                aria-label="Decrease quantity"
+                onClick={() => setQty((q) => Math.max(1, q - 10))}
+                className="px-2.5 py-2 text-muted-foreground hover:text-foreground"
               >
-                <span className="block font-medium">
-                  {tier.qty.toLocaleString()}
-                </span>
-                <span className="mt-0.5 block text-xs text-muted-foreground">
-                  {formatNaira(tier.unitPrice)}/unit
-                </span>
+                <Minus className="h-4 w-4" />
               </button>
-            );
-          })}
-        </div>
-        <div className="mt-3 flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Custom quantity</span>
-          <div className="flex items-center rounded-lg border border-border">
-            <button
-              type="button"
-              aria-label="Decrease quantity"
-              onClick={() => setQty((q) => Math.max(1, q - 10))}
-              className="px-2.5 py-2 text-muted-foreground hover:text-foreground"
-            >
-              <Minus className="h-4 w-4" />
-            </button>
-            <input
-              type="number"
-              min={1}
-              value={qty}
-              onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
-              className="w-16 border-x border-border bg-transparent py-2 text-center text-sm text-foreground outline-none"
-            />
-            <button
-              type="button"
-              aria-label="Increase quantity"
-              onClick={() => setQty((q) => q + 10)}
-              className="px-2.5 py-2 text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+              <input
+                type="number"
+                min={1}
+                value={qty}
+                onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
+                className="w-16 border-x border-border bg-transparent py-2 text-center text-sm text-foreground outline-none"
+              />
+              <button
+                type="button"
+                aria-label="Increase quantity"
+                onClick={() => setQty((q) => q + 10)}
+                className="px-2.5 py-2 text-muted-foreground hover:text-foreground"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Artwork */}
       <div>
         <Label className="text-sm font-medium text-foreground">Artwork</Label>
         <div className="mt-2">
-          <ArtworkPicker value={artwork} onChange={setArtwork} />
+          <ArtworkPicker
+            value={artwork}
+            onChange={setArtwork}
+            onUploadingChange={setIsUploadingArtwork}
+          />
         </div>
         <p className="mt-2 text-sm text-muted-foreground">
           {artwork.type === "design"
@@ -223,10 +253,10 @@ export function ProductCustomizer({ product }: { product: Product }) {
           size="lg"
           className="mt-4 w-full"
           onClick={handleAddToCart}
-          disabled={!isArtworkValid}
+          disabled={!isArtworkValid || isUploadingArtwork}
         >
           <ShoppingCart className="mr-2 h-4 w-4" />
-          Add to Cart
+          {isUploadingArtwork ? "Uploading artwork…" : "Add to Cart"}
         </Button>
       </div>
     </div>
