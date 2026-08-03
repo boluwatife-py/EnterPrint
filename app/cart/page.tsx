@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { CartView } from "@/components/cart/cart-view"
 
 export const metadata: Metadata = {
-  title: "Cart — EnterPrint",
+  title: "Cart - EnterPrint",
   description: "Review your packaging and print order before checkout.",
 }
 

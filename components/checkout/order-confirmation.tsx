@@ -122,7 +122,7 @@ export function OrderConfirmation() {
       </h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {isPending
-          ? "We're still waiting on confirmation from Paystack. This can take a minute — check your order history shortly."
+          ? "We're still waiting on confirmation from Paystack. This can take a minute, check your order history shortly."
           : `Order ${order.id} has been placed successfully.`}
       </p>
 

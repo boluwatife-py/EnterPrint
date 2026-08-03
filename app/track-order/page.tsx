@@ -54,7 +54,7 @@ function TrackOrderContent() {
       }
       if (httpStatus === 429) {
         setErrorMessage(
-          "Too many lookups — please wait a minute and try again.",
+          "Too many lookups, please wait a minute and try again.",
         );
       } else {
         const message = err instanceof Error ? err.message : null;
@@ -133,7 +133,7 @@ function TrackOrderContent() {
               No order looked up yet
             </p>
             <p className="max-w-sm text-sm text-muted-foreground">
-              Your order number was sent to you by email when you checked out —
+              Your order number was sent to you by email when you checked out,
               it looks like{" "}
               <span className="font-mono text-foreground">EP-0241</span>.
             </p>

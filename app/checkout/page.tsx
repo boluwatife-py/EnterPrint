@@ -3,7 +3,7 @@ import { CheckoutFlow } from "@/components/checkout/checkout-flow"
 import { ProtectedRoute } from "@/components/auth/protected-route"
 
 export const metadata: Metadata = {
-  title: "Checkout — EnterPrint",
+  title: "Checkout - EnterPrint",
   description: "Securely complete your packaging and print order.",
 }
 

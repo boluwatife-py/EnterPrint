@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
-  title: "Careers — Join the EnterPrint Team",
+  title: "Careers - Join the EnterPrint Team",
   description:
     "Help us build Africa's world-class printing marketplace. Explore open roles across engineering, design, operations, and customer success at EnterPrint.",
 };
@@ -136,7 +136,7 @@ export default function CareersPage() {
         </h2>
         <p className="mt-3 leading-relaxed text-muted-foreground">
           Don&apos;t see a perfect fit? We&apos;re always glad to hear from great
-          people — reach out anyway.
+          people, reach out anyway.
         </p>
         <ul className="mt-8 divide-y divide-border border-y border-border">
           {openings.map((job) => (

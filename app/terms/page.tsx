@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/content-sections";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — EnterPrint",
+  title: "Terms of Service - EnterPrint",
   description:
     "The terms and conditions governing your use of the EnterPrint printing marketplace and services.",
 };

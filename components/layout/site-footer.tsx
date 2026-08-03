@@ -55,14 +55,14 @@ export async function SiteFooter({ categories }: SiteFooterProps) {
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Company</h3>
+            <h3 className="text-sm font-semibold text-foreground">Support</h3>
             <ul className="mt-4 space-y-3">
               {[
-                { label: "About EnterPrint", url: "/about" },
-                { label: "How it works", url: "/how-it-works" },
-                { label: "Sustainability", url: "/sustainability" },
-                { label: "Careers", url: "/careers" },
-                { label: "Contact", url: "/contact" },
+                { label: "Help Center", url: "/help-center" },
+                { label: "Track your order", url: "/track-order" },
+                { label: "Delivery info", url: "/delivery-info" },
+                { label: "Returns", url: "/returns" },
+                { label: "Design guidelines", url: "/design-guidelines" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link
@@ -75,16 +75,16 @@ export async function SiteFooter({ categories }: SiteFooterProps) {
               ))}
             </ul>
           </div>
-
+          
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Support</h3>
+            <h3 className="text-sm font-semibold text-foreground">Company</h3>
             <ul className="mt-4 space-y-3">
               {[
-                { label: "Help Center", url: "/help-center" },
-                { label: "Track your order", url: "/track-order" },
-                { label: "Delivery info", url: "/delivery-info" },
-                { label: "Returns", url: "/returns" },
-                { label: "Design guidelines", url: "/design-guidelines" },
+                { label: "About EnterPrint", url: "/about" },
+                { label: "How it works", url: "/how-it-works" },
+                { label: "Sustainability", url: "/sustainability" },
+                // { label: "Careers", url: "/careers" },
+                { label: "Contact", url: "/contact" },
               ].map((item) => (
                 <li key={item.label}>
                   <Link

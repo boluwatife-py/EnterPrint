@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
-  title: "About EnterPrint — Our Story & Mission",
+  title: "About EnterPrint - Our Story & Mission",
   description:
     "EnterPrint is Africa's world-class marketplace for packaging, branding, and commercial printing. Learn about our mission to make premium print accessible to every business.",
 };
@@ -29,7 +29,7 @@ const values = [
     icon: Users,
     title: "Built for businesses",
     description:
-      "From solo founders to enterprise teams, our tools scale with you — reorders, bulk pricing, and dedicated support.",
+      "From solo founders to enterprise teams, our tools scale with you, reorders, bulk pricing, and dedicated support.",
   },
   {
     icon: Globe2,
@@ -76,9 +76,9 @@ export default function AboutPage() {
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
               Great branding shouldn&apos;t be reserved for companies with big
-              budgets and design departments. We believe every business — the
+              budgets and design departments. We believe every business, the
               corner bakery, the fast-growing startup, the established
-              manufacturer — deserves packaging and print that looks the part.
+              manufacturer, deserves packaging and print that looks the part.
             </p>
             <p className="mt-4 leading-relaxed text-muted-foreground">
               So we built EnterPrint: a single place to customize products,

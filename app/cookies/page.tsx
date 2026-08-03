@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/content-sections";
 
 export const metadata: Metadata = {
-  title: "Cookie Policy — EnterPrint",
+  title: "Cookie Policy - EnterPrint",
   description:
     "How and why EnterPrint uses cookies and similar technologies, and how you can manage your preferences.",
 };

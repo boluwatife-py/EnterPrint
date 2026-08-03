@@ -13,14 +13,14 @@ const contactChannels = [
   {
     icon: Mail,
     label: "Email us",
-    value: "hello@enterprint.com",
-    href: "mailto:hello@enterprint.com",
+    value: "info@enterprint.com",
+    href: "mailto:info@enterprint.com",
   },
   {
     icon: Phone,
     label: "Call us",
-    value: "+234 800 123 4567",
-    href: "tel:+2348001234567",
+    value: "+234 703 343 4402",
+    href: "tel:+2347033434402",
   },
   {
     icon: MessageCircle,
@@ -33,12 +33,7 @@ const contactChannels = [
 const offices = [
   {
     city: "Lagos, Nigeria",
-    address: "12 Adeyemi Close, Victoria Island",
-    hours: "Mon – Sat, 8am – 6pm",
-  },
-  {
-    city: "Ibadan, Nigeria",
-    address: "45 Ring Road, Challenge",
+    address: "7 Mustazeezah Adeyemi Blessing Estate Amuwo Odofin.",
     hours: "Mon – Sat, 8am – 6pm",
   },
 ];
@@ -73,7 +68,7 @@ export default function ContactPage() {
     setTimeout(() => {
       setSubmitting(false);
       setSent(true);
-      toast.success("Message sent — we'll be in touch shortly");
+      toast.success("Message sent, we'll be in touch shortly");
     }, 700);
   }
 
@@ -149,7 +144,7 @@ export default function ContactPage() {
                 <Send className="h-6 w-6 text-muted-foreground" />
                 <p className="font-medium text-foreground">Message sent</p>
                 <p className="max-w-xs text-sm text-muted-foreground">
-                  Thanks, {form.name.split(" ")[0] || "there"} — we'll reply to{" "}
+                  Thanks, {form.name.split(" ")[0] || "there"}, we'll reply to{" "}
                   {form.email} shortly.
                 </p>
               </div>

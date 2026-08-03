@@ -33,7 +33,7 @@ export function MessageLog({
     return (
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-8 text-center text-sm text-muted-foreground">
         <MessageSquare className="h-6 w-6" />
-        <p>No messages yet — say hello below.</p>
+        <p>No messages yet, say hello below.</p>
       </div>
     );
   }

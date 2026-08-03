@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/content-sections";
 
 export const metadata: Metadata = {
-  title: "Delivery Information — EnterPrint",
+  title: "Delivery Information - EnterPrint",
   description:
     "Everything about EnterPrint delivery: production timelines, nationwide and international coverage, shipping costs, and how to track your order.",
 };

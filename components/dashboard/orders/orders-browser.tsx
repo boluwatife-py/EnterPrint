@@ -157,7 +157,7 @@ export function OrdersBrowser() {
       const message = err instanceof Error ? err.message : null;
       toast.error(
         message ||
-          "Couldn't reorder — none of the items may still be available.",
+          "Couldn't reorder, none of the items may still be available.",
       );
       setReorderingId(null);
     }

@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/content-sections";
 
 export const metadata: Metadata = {
-  title: "Returns & Reprints — EnterPrint",
+  title: "Returns & Reprints - EnterPrint",
   description:
     "EnterPrint's returns and reprint policy for custom print orders: what's covered, how to request a reprint, and how refunds work.",
 };
@@ -39,7 +39,7 @@ const sections: ContentSection[] = [
   {
     heading: "How to request a reprint or refund",
     paragraphs: [
-      "Contact us within 7 days of delivery with your order number and clear photos of the issue. Our team will review and, where the issue is covered, arrange a free reprint or a refund — whichever you prefer.",
+      "Contact us within 7 days of delivery with your order number and clear photos of the issue. Our team will review and, where the issue is covered, arrange a free reprint or a refund, whichever you prefer.",
     ],
   },
 ];

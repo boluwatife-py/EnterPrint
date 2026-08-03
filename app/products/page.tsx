@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { CatalogBrowser } from "@/components/product/catalog-browser"
 
 export const metadata: Metadata = {
-  title: "Products — EnterPrint",
+  title: "Products - EnterPrint",
   description:
     "Browse packaging, labels, business cards, flyers, banners, and branded merch. Customize and order online.",
 }

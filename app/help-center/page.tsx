@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
-  title: "Help Center — EnterPrint Support",
+  title: "Help Center - EnterPrint Support",
   description:
     "Find answers about ordering, customization, delivery, returns, and design. Browse EnterPrint's help topics or get in touch with our support team.",
 };
@@ -62,7 +62,7 @@ export default function HelpCenterPage() {
       <PageHero
         eyebrow="Help center"
         title="How can we help?"
-        description="Browse common topics below, track an existing order, or reach out to our team directly — we typically reply within a few hours."
+        description="Browse common topics below, track an existing order, or reach out to our team directly, we typically reply within a few hours."
       >
         <div className="flex flex-wrap gap-3">
           <Button render={<Link href="/track-order" />} size="lg">

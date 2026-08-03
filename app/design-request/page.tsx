@@ -4,7 +4,7 @@ import { Check } from "lucide-react"
 import { DesignRequestForm } from "@/components/design/design-request-form"
 
 export const metadata: Metadata = {
-  title: "Request a Design — EnterPrint",
+  title: "Request a Design - EnterPrint",
   description:
     "No artwork? Our in-house design team will craft print-ready artwork that makes your brand look world-class.",
 }

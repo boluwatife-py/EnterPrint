@@ -75,7 +75,7 @@ export default function DashboardPage() {
       const message = err instanceof Error ? err.message : null;
       toast.error(
         message ||
-          "Couldn't reorder — none of the items may still be available.",
+          "Couldn't reorder, none of the items may still be available.",
       );
       setReorderingId(null);
     }
@@ -367,7 +367,7 @@ export default function DashboardPage() {
             {state === "ready" && recentOrders.length === 0 && (
               <div className="flex flex-col items-center gap-3 p-10 text-center">
                 <UploadCloud className="h-6 w-6 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">No orders yet — start your first project.</p>
+                <p className="text-sm text-muted-foreground">No orders yet, start your first project.</p>
                 <Button render={<Link href="/products" />} size="sm">
                   Browse products
                 </Button>

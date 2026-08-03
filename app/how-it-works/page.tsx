@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
-  title: "How It Works — Ordering Print with EnterPrint",
+  title: "How It Works - Ordering Print with EnterPrint",
   description:
     "From choosing a product to delivery at your door, see how easy it is to order custom packaging and print on EnterPrint in six simple steps.",
 };
@@ -46,7 +46,7 @@ const steps = [
     icon: Factory,
     title: "We produce it",
     description:
-      "Your order enters production. Track every stage — prepress, printing, finishing — right from your dashboard.",
+      "Your order enters production. Track every stage, prepress, printing, finishing, right from your dashboard.",
   },
   {
     icon: Truck,
@@ -59,7 +59,7 @@ const steps = [
 const faqs = [
   {
     q: "How long does an order take?",
-    a: "Most standard products are produced within 3–5 business days, plus delivery time. Custom and bulk orders may take longer — the estimate is always shown before checkout.",
+    a: "Most standard products are produced within 3-5 business days, plus delivery time. Custom and bulk orders may take longer, the estimate is always shown before checkout.",
   },
   {
     q: "Can I get a proof before printing?",

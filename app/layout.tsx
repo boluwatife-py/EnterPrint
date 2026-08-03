@@ -14,7 +14,7 @@ import { SiteHeaderSkeleton } from "@/components/layout/site-header-skeleton";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "EnterPrint — Packaging, Branding & Commercial Printing Marketplace",
+  title: "EnterPrint - Packaging, Branding & Commercial Printing Marketplace",
   description:
     "Order custom packaging, labels, business cards, banners and branded merch online. Customize products, upload artwork, track production and get delivery anywhere. Africa's world-class printing marketplace.",
   generator: "v0.app",

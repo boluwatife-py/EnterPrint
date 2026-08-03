@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/content-sections";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — EnterPrint",
+  title: "Privacy Policy - EnterPrint",
   description:
     "How EnterPrint collects, uses, and protects your personal information when you use our printing marketplace.",
 };
@@ -39,7 +39,7 @@ const sections: ContentSection[] = [
   {
     heading: "How we share information",
     paragraphs: [
-      "We do not sell your personal data. We share information only with the partners needed to run our service — such as payment processors, production facilities, and delivery providers — and only to the extent required to fulfil your order or comply with the law.",
+      "We do not sell your personal data. We share information only with the partners needed to run our service, such as payment processors, production facilities, and delivery providers, and only to the extent required to fulfil your order or comply with the law.",
     ],
   },
   {

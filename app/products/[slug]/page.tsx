@@ -26,7 +26,7 @@ export async function generateMetadata({
   const product = await getProduct(slug);
 
   return {
-    title: `${product.name} — EnterPrint`,
+    title: `${product.name} - EnterPrint`,
     description: product.tagline ?? product.description ?? undefined,
   };
 }

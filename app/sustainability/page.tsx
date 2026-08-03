@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PageHero } from "@/components/marketing/page-hero";
 
 export const metadata: Metadata = {
-  title: "Sustainability — EnterPrint's Commitment to Responsible Print",
+  title: "Sustainability - EnterPrint's Commitment to Responsible Print",
   description:
     "How EnterPrint reduces waste with recycled materials, FSC-certified paper, eco-friendly inks, and responsible production practices.",
 };
@@ -44,7 +44,7 @@ export default function SustainabilityPage() {
       <PageHero
         eyebrow="Sustainability"
         title="Print responsibly, without cutting corners."
-        description="Beautiful packaging and a healthy planet aren't mutually exclusive. We're building sustainability into every stage of production — from the materials we source to the way we ship."
+        description="Beautiful packaging and a healthy planet aren't mutually exclusive. We're building sustainability into every stage of production, from the materials we source to the way we ship."
       />
 
       {/* Image + intro */}
@@ -55,7 +55,7 @@ export default function SustainabilityPage() {
               Our approach
             </h2>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Printing has an environmental footprint — we won&apos;t pretend
+              Printing has an environmental footprint, we won&apos;t pretend
               otherwise. What we can do is make deliberate choices that reduce
               that impact: smarter materials, cleaner inks, and a
               produce-to-order model that avoids waste.

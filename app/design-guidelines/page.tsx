@@ -6,7 +6,7 @@ import {
 } from "@/components/marketing/content-sections";
 
 export const metadata: Metadata = {
-  title: "Design Guidelines — Preparing Artwork for Print | EnterPrint",
+  title: "Design Guidelines - Preparing Artwork for Print | EnterPrint",
   description:
     "How to prepare print-ready artwork for EnterPrint: accepted file formats, resolution, colour mode, bleed, and safe margins for perfect results.",
 };
@@ -33,7 +33,7 @@ const sections: ContentSection[] = [
   {
     heading: "Colour mode",
     paragraphs: [
-      "Set up artwork in CMYK for accurate print colour. Files supplied in RGB will be converted, which can cause slight colour shifts — especially in bright blues and greens. For exact brand colours, specify Pantone references.",
+      "Set up artwork in CMYK for accurate print colour. Files supplied in RGB will be converted, which can cause slight colour shifts - especially in bright blues and greens. For exact brand colours, specify Pantone references.",
     ],
   },
   {
