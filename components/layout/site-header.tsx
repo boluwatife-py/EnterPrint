@@ -86,12 +86,16 @@ function HeaderIconLink({
   icon: Icon,
   badge,
   active,
+  className,
+  iconClassName,
 }: {
   href: string;
   label: string;
   icon: LucideIcon;
   badge?: number;
   active?: boolean;
+  className?: string;
+  iconClassName?: string;
 }) {
   return (
     <Tooltip>
@@ -101,7 +105,7 @@ function HeaderIconLink({
             render={<Link href={href} aria-label={label} />}
             variant={active ? "secondary" : "ghost"}
             size="icon"
-            className="relative"
+            className={cn("relative", className)}
           />
         }
       >
@@ -109,6 +113,7 @@ function HeaderIconLink({
           className={cn(
             "h-5 w-5",
             active ? "text-foreground" : "text-muted-foreground",
+            iconClassName,
           )}
         />
         {badge ? (
@@ -178,7 +183,7 @@ function DashboardMenu({ pathname }: { pathname: string }) {
         align="end"
         sideOffset={8}
         className={cn(
-          "transition-all duration-150", // Optional: smooths out width hydration shifts
+          "transition-all duration-150",
           isAuthenticated ? "w-64" : "w-24",
         )}
         onMouseEnter={openMenu}
@@ -278,7 +283,7 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
           </nav>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 sm:gap-2">
           {/* Dashboard dropdown — desktop only; mobile uses the drawer */}
           <span className="hidden md:inline-flex">
             <DashboardMenu pathname={pathname} />
@@ -339,16 +344,19 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
 
           <div className="mx-1 hidden h-6 w-px bg-border sm:block" />
 
+          {/* Cart - increased size specifically on mobile */}
           <HeaderIconLink
             href="/cart"
             label={`Cart, ${itemCount} item${itemCount === 1 ? "" : "s"}`}
             icon={ShoppingCart}
             badge={itemCount || undefined}
+            className="h-11 w-11 sm:h-10 sm:w-10"
+            iconClassName="h-6 w-6 sm:h-5 sm:w-5"
           />
 
           <div className="mx-1 hidden h-6 w-px bg-border md:block" />
 
-          {/* Start an order — full button from md up; mobile uses the drawer CTA */}
+          {/* Start an order — full button from md up */}
           <Button
             render={<Link href="/products" />}
             className="hidden md:inline-flex"
@@ -356,18 +364,18 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
             Start an order
           </Button>
 
-          {/* Mobile menu */}
+          {/* Mobile menu - increased size on mobile */}
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
               render={
                 <Button
                   variant="ghost"
-                  className="md:hidden h-16 w-16 p-0 flex items-center justify-center"
+                  className="md:hidden h-12 w-12 p-0 flex items-center justify-center rounded-md"
                   aria-label="Open menu"
                 />
               }
             >
-              <Menu className="h-10 w-10" />
+              <Menu className="h-7 w-7" />
             </SheetTrigger>
 
             <SheetContent side="right" className="flex w-80 flex-col p-0">

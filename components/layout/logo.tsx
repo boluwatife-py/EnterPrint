@@ -6,7 +6,7 @@ export function Logo({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      className={cn("flex items-center", className)}
+      className={cn("flex items-center px-2", className)}
       aria-label="EnterPrint home"
     >
       <Image
