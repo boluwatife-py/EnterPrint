@@ -362,14 +362,14 @@ export function SiteHeader({ categories }: SiteHeaderProps) {
               render={
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="md:hidden"
+                  className="md:hidden h-16 w-16 p-0 flex items-center justify-center"
                   aria-label="Open menu"
                 />
               }
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-10 w-10" />
             </SheetTrigger>
+
             <SheetContent side="right" className="flex w-80 flex-col p-0">
               <SheetHeader className="border-b border-border">
                 <SheetTitle className="text-left">
