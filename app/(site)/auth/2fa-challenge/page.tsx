@@ -15,6 +15,9 @@ import { useAuth } from "@/lib/auth-context";
 import { readChallengeId, clearChallengeId } from "@/lib/auth-errors";
 import { withRedirectParam } from "@/lib/auth-redirect";
 
+// Forces this page to be dynamically rendered at request-time, bypassing static prerendering errors
+export const dynamic = "force-dynamic";
+
 const CODE_LENGTH = 6;
 
 function TwoFactorChallengePageContent() {
