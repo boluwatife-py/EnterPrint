@@ -81,13 +81,15 @@ export default function DashboardPage() {
     }
   }
 
-  const initials = (user?.name ?? "You")
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-
+  const nameString = typeof user?.name === "string" ? user.name.trim() : "";
+  const initials = nameString
+    ? nameString
+        .split(/\s+/)
+        .map((n) => n?.[0] ?? "")
+        .slice(0, 2)
+        .join("")
+        .toUpperCase()
+    : "U";
   const statCards = [
     {
       label: "Open orders",
@@ -162,7 +164,9 @@ export default function DashboardPage() {
               <span
                 className={cn(
                   "flex h-10 w-10 shrink-0 items-center justify-center rounded-md",
-                  card.alert ? "bg-primary/10 text-primary" : "bg-secondary text-muted-foreground",
+                  card.alert
+                    ? "bg-primary/10 text-primary"
+                    : "bg-secondary text-muted-foreground",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -185,7 +189,9 @@ export default function DashboardPage() {
 
       {/* Quick actions */}
       <div>
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">Quick actions</p>
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          Quick actions
+        </p>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {quickActions.map((action) => {
             const Icon = action.icon;
@@ -198,7 +204,9 @@ export default function DashboardPage() {
                 <span className="flex h-9 w-9 items-center justify-center rounded-md bg-secondary text-muted-foreground transition-colors group-hover:bg-background group-hover:text-foreground">
                   <Icon className="h-4 w-4" />
                 </span>
-                <span className="text-sm font-medium text-foreground">{action.label}</span>
+                <span className="text-sm font-medium text-foreground">
+                  {action.label}
+                </span>
               </Link>
             );
           })}
@@ -210,10 +218,18 @@ export default function DashboardPage() {
         <div className="rounded-xl border border-border bg-card">
           <div className="flex items-center justify-between border-b border-border p-5">
             <div>
-              <h2 className="font-serif text-lg font-semibold text-foreground">Recent orders</h2>
-              <p className="text-sm text-muted-foreground">Active updates, items, and billing details.</p>
+              <h2 className="font-serif text-lg font-semibold text-foreground">
+                Recent orders
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Active updates, items, and billing details.
+              </p>
             </div>
-            <Button render={<Link href="/dashboard/orders" />} variant="ghost" size="sm">
+            <Button
+              render={<Link href="/dashboard/orders" />}
+              variant="ghost"
+              size="sm"
+            >
               View all
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
@@ -222,7 +238,10 @@ export default function DashboardPage() {
           <div className="divide-y divide-border">
             {state === "loading" &&
               [0, 1, 2].map((i) => (
-                <div key={i} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div
+                  key={i}
+                  className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div className="flex flex-1 items-start gap-3">
                     <span className="h-12 w-12 shrink-0 animate-pulse rounded-lg bg-secondary" />
                     <div className="min-w-0 flex-1 space-y-2">
@@ -245,7 +264,9 @@ export default function DashboardPage() {
             {state === "error" && (
               <div className="flex flex-col items-center gap-3 p-10 text-center">
                 <AlertCircle className="h-6 w-6 text-destructive" />
-                <p className="text-sm text-foreground">Couldn&apos;t load your recent orders.</p>
+                <p className="text-sm text-foreground">
+                  Couldn&apos;t load your recent orders.
+                </p>
                 <Button variant="outline" size="sm" onClick={load}>
                   Try again
                 </Button>
@@ -255,7 +276,10 @@ export default function DashboardPage() {
             {state === "ready" &&
               recentOrders.map((order) => {
                 const isShipped = SHIPPED_STATUSES.has(order.status);
-                const totalQty = order.items.reduce((n, i) => n + i.quantity, 0);
+                const totalQty = order.items.reduce(
+                  (n, i) => n + i.quantity,
+                  0,
+                );
 
                 return (
                   <div
@@ -270,13 +294,17 @@ export default function DashboardPage() {
                         <Package className="h-5 w-5" />
                         {order.unreadMessageCount > 0 && (
                           <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
-                            {order.unreadMessageCount > 9 ? "9+" : order.unreadMessageCount}
+                            {order.unreadMessageCount > 9
+                              ? "9+"
+                              : order.unreadMessageCount}
                           </span>
                         )}
                       </span>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <p className="font-medium text-foreground">{order.id}</p>
+                          <p className="font-medium text-foreground">
+                            {order.id}
+                          </p>
                           {order.unreadMessageCount > 0 && (
                             <span className="flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
                               <MessageSquare className="h-2.5 w-2.5" />
@@ -286,7 +314,8 @@ export default function DashboardPage() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(order.createdAt)} · {order.items.length}{" "}
-                          {order.items.length === 1 ? "item" : "items"} · Qty {totalQty}
+                          {order.items.length === 1 ? "item" : "items"} · Qty{" "}
+                          {totalQty}
                         </p>
                         <div className="mt-1.5 flex flex-wrap gap-1.5">
                           {order.items.map((item, i) => (
@@ -325,20 +354,34 @@ export default function DashboardPage() {
                             <MoreHorizontal className="h-4 w-4" />
                           )}
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-auto min-w-40">
-                          <DropdownMenuItem render={<Link href={`/dashboard/orders/${order.id}`} />}>
+                        <DropdownMenuContent
+                          align="end"
+                          className="w-auto min-w-40"
+                        >
+                          <DropdownMenuItem
+                            render={
+                              <Link href={`/dashboard/orders/${order.id}`} />
+                            }
+                          >
                             <Eye className="mr-2 h-4 w-4" />
                             View order
                           </DropdownMenuItem>
                           {order.threadId && (
                             <DropdownMenuItem
                               className="flex items-center whitespace-nowrap"
-                              render={<Link href={`/dashboard/messages/${order.threadId}`} />}
+                              render={
+                                <Link
+                                  href={`/dashboard/messages/${order.threadId}`}
+                                />
+                              }
                             >
                               <MessageSquare className="mr-2 h-4 w-4 shrink-0" />
                               View messages
                               {order.unreadMessageCount > 0 && (
-                                <Badge variant="secondary" className="ml-auto shrink-0">
+                                <Badge
+                                  variant="secondary"
+                                  className="ml-auto shrink-0"
+                                >
                                   {order.unreadMessageCount}
                                 </Badge>
                               )}
@@ -352,7 +395,11 @@ export default function DashboardPage() {
                             Reorder
                           </DropdownMenuItem>
                           {isShipped && (
-                            <DropdownMenuItem render={<Link href={`/track-order?order=${order.id}`} />}>
+                            <DropdownMenuItem
+                              render={
+                                <Link href={`/track-order?order=${order.id}`} />
+                              }
+                            >
                               <Truck className="mr-2 h-4 w-4" />
                               Track delivery
                             </DropdownMenuItem>
@@ -367,7 +414,9 @@ export default function DashboardPage() {
             {state === "ready" && recentOrders.length === 0 && (
               <div className="flex flex-col items-center gap-3 p-10 text-center">
                 <UploadCloud className="h-6 w-6 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">No orders yet, start your first project.</p>
+                <p className="text-sm text-muted-foreground">
+                  No orders yet, start your first project.
+                </p>
                 <Button render={<Link href="/products" />} size="sm">
                   Browse products
                 </Button>
@@ -379,7 +428,9 @@ export default function DashboardPage() {
         {/* Account panel */}
         <div className="flex flex-col gap-4">
           <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-serif text-lg font-semibold text-foreground">Account</h2>
+            <h2 className="font-serif text-lg font-semibold text-foreground">
+              Account
+            </h2>
             <div className="mt-4 flex items-center gap-3">
               <Avatar className="h-10 w-10">
                 <AvatarFallback className="bg-secondary text-xs font-medium text-foreground">
@@ -387,12 +438,25 @@ export default function DashboardPage() {
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-foreground">{user?.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+                <p className="truncate text-sm font-medium text-foreground">
+                  {user?.name}
+                </p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {user?.email}
+                </p>
               </div>
             </div>
-            {user?.phoneNumber && <p className="mt-3 text-xs text-muted-foreground">{user.phoneNumber}</p>}
-            <Button render={<Link href="/dashboard/settings" />} variant="outline" size="sm" className="mt-4 w-full">
+            {user?.phoneNumber && (
+              <p className="mt-3 text-xs text-muted-foreground">
+                {user.phoneNumber}
+              </p>
+            )}
+            <Button
+              render={<Link href="/dashboard/settings" />}
+              variant="outline"
+              size="sm"
+              className="mt-4 w-full"
+            >
               Edit profile
             </Button>
           </div>
@@ -405,8 +469,12 @@ export default function DashboardPage() {
               <Search className="h-4 w-4" />
             </span>
             <div>
-              <p className="text-sm font-medium text-foreground">Track a delivery</p>
-              <p className="text-xs text-muted-foreground">Enter an order number</p>
+              <p className="text-sm font-medium text-foreground">
+                Track a delivery
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Enter an order number
+              </p>
             </div>
           </Link>
         </div>
