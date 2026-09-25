@@ -1,8 +1,7 @@
 // Central API client for the ENTERPRINT backend.
 
 export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000/v1"
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/v1"
 ).replace(/\/+$/, "");
 
 export type ApiError = Error & {
@@ -32,6 +31,26 @@ function buildError(
   error.code = code;
   error.fields = fields;
   return error;
+}
+
+/**
+ * Best-effort fallback shapes for build-time/SSR requests when the backend
+ * is unreachable. Each shape must match what the typed caller expects to
+ * unwrap (e.g. `res.data`), or callers get `undefined` and crash on it.
+ */
+function buildFallback<T>(path: string): T {
+  if (path.includes("/categories")) {
+    return { data: [] } as unknown as T;
+  }
+  if (path.includes("/products")) {
+    return { data: [], page: 1, pageSize: 0, total: 0 } as unknown as T;
+  }
+  if (path.includes("/list")) {
+    return [] as unknown as T;
+  }
+  // Unknown shape — undefined is safer than guessing wrong here,
+  // but callers should still guard against it (see step 2).
+  return undefined as unknown as T;
 }
 
 /**
@@ -72,16 +91,13 @@ export async function apiFetch<T>(
       `[apiFetch Warning] Failed to connect to backend at ${API_BASE_URL}${path}. Returning fallback data for build.`,
     );
 
-    // If we are during build phase or server-side prerendering, return safe mocks
-    if (
+    // Only fall back during build/SSR — never mask a real network error in the browser
+    const isBuildOrServer =
       process.env.NEXT_PHASE === "phase-production-build" ||
-      typeof window === "undefined"
-    ) {
-      // If the endpoint expects a list/array (like categories or products), return []
-      if (path.includes("/categories") || path.includes("/products") || path.includes("/list")) {
-        return [] as unknown as T;
-      }
-      return undefined as unknown as T;
+      typeof window === "undefined";
+
+    if (isBuildOrServer) {
+      return buildFallback<T>(path);
     }
 
     throw networkError;

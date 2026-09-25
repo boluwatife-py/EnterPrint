@@ -11,7 +11,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const categories = await listCategories();
+  const categories = await listCategories().catch(() => []);
 
   return (
     <div className="flex min-h-dvh flex-col">
