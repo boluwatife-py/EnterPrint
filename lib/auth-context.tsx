@@ -26,6 +26,7 @@ export type AuthUser = {
   initials: string;
   emailVerified: boolean;
   requires2FA: boolean;
+  isAdmin: boolean;
 };
 
 type LoginSuccess = { user: AuthUser; accessToken: string };
@@ -38,6 +39,7 @@ type AuthContextValue = {
   user: AuthUser | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  isAdmin: boolean;
   isHydrated: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (values: {
@@ -320,6 +322,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       accessToken,
       isAuthenticated: Boolean(user && accessToken),
+      isAdmin: Boolean(user?.isAdmin),
       isHydrated,
       login,
       signup,

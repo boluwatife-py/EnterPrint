@@ -43,18 +43,13 @@ export default async function RootLayout({
 
   return (
     <html lang="en" className="light">
-      <body className="bg-background font-sans antialiased" cz-shortcut-listen="true">
+      <body
+        className="bg-background font-sans antialiased"
+        cz-shortcut-listen="true"
+      >
         <AuthProvider>
           <CartProvider>
-            <div className="flex min-h-dvh flex-col">
-              <Suspense fallback={<SiteHeaderSkeleton />}>
-                <SiteHeader categories={categories} />
-              </Suspense>
-
-              <main className="flex-1">{children}</main>
-
-              <SiteFooter categories={categories} />
-            </div>
+            {children}
 
             <Toaster position="top-center" />
           </CartProvider>

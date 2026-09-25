@@ -6,19 +6,17 @@ export function Logo({ className }: { className?: string }) {
   return (
     <Link
       href="/"
-      className={cn("flex items-center", className)}
+      className={cn("flex items-center px-2", className)}
       aria-label="EnterPrint home"
     >
-      <span className="relative block h-9 w-26 overflow-hidden rounded-lg bg-background sm:h-10 sm:w-29 lg:h-12 lg:w-35">
-        <Image
-          src="/enterprint-logo.jpeg"
-          alt="EnterPrint, Print Beyond Limits"
-          fill
-          priority
-          sizes="140px"
-          className="object-cover object-center"
-        />
-      </span>
+      <Image
+        src="/enterprint-logo.png"
+        alt="EnterPrint, Print Beyond Limits"
+        width={140}
+        height={40}
+        priority
+        className="h-9 w-auto sm:h-10 lg:h-12 object-contain"
+      />
     </Link>
   );
 }

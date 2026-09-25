@@ -4,7 +4,7 @@
 import { useEffect, type ReactNode } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
-import { DashboardLoading } from "@/app/dashboard/loading";
+import { DashboardLoading } from "@/app/(site)/dashboard/loading";
 
 export function ProtectedRoute({
   children,

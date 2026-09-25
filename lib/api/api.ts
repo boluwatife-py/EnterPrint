@@ -1,12 +1,7 @@
 // Central API client for the ENTERPRINT backend.
-//
-// The base URL points at the deployed backend (prefixed with the `/v1` API
-// version). It can be overridden with NEXT_PUBLIC_API_BASE_URL for local
-// development against http://localhost:8000/v1.
 
 export const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "http://localhost:8000/v1"
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/v1"
 ).replace(/\/+$/, "");
 
 export type ApiError = Error & {
@@ -39,12 +34,27 @@ function buildError(
 }
 
 /**
- * Thin fetch wrapper that:
- * - prefixes the API base URL
- * - always sends cookies (so the HttpOnly refresh_token round-trips)
- * - attaches the bearer token when provided
- * - parses the standard `{ error: { code, message, fields } }` envelope
- *   (and the one-off `{ detail: "..." }` shape from require_admin)
+ * Best-effort fallback shapes for build-time/SSR requests when the backend
+ * is unreachable. Each shape must match what the typed caller expects to
+ * unwrap (e.g. `res.data`), or callers get `undefined` and crash on it.
+ */
+function buildFallback<T>(path: string): T {
+  if (path.includes("/categories")) {
+    return { data: [] } as unknown as T;
+  }
+  if (path.includes("/products")) {
+    return { data: [], page: 1, pageSize: 0, total: 0 } as unknown as T;
+  }
+  if (path.includes("/list")) {
+    return [] as unknown as T;
+  }
+  // Unknown shape — undefined is safer than guessing wrong here,
+  // but callers should still guard against it (see step 2).
+  return undefined as unknown as T;
+}
+
+/**
+ * Thin fetch wrapper with build-time fallback protection.
  */
 export async function apiFetch<T>(
   path: string,
@@ -53,26 +63,45 @@ export async function apiFetch<T>(
   const isFormData =
     typeof FormData !== "undefined" && body instanceof FormData;
 
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    method,
-    credentials: "include",
-    signal,
-    headers: {
-      // Skip ngrok's interstitial warning page for API requests.
-      "ngrok-skip-browser-warning": "true",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(body !== undefined && !isFormData
-        ? { "Content-Type": "application/json" }
-        : {}),
-      ...headers,
-    },
-    body:
-      body === undefined
-        ? undefined
-        : isFormData
-          ? (body as FormData)
-          : JSON.stringify(body),
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method,
+      credentials: "include",
+      signal,
+      headers: {
+        // Skip ngrok's interstitial warning page for API requests.
+        "ngrok-skip-browser-warning": "true",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(body !== undefined && !isFormData
+          ? { "Content-Type": "application/json" }
+          : {}),
+        ...headers,
+      },
+      body:
+        body === undefined
+          ? undefined
+          : isFormData
+            ? (body as FormData)
+            : JSON.stringify(body),
+    });
+  } catch (networkError) {
+    // If the backend API is offline (e.g. during a production build container pass)
+    console.warn(
+      `[apiFetch Warning] Failed to connect to backend at ${API_BASE_URL}${path}. Returning fallback data for build.`,
+    );
+
+    // Only fall back during build/SSR — never mask a real network error in the browser
+    const isBuildOrServer =
+      process.env.NEXT_PHASE === "phase-production-build" ||
+      typeof window === "undefined";
+
+    if (isBuildOrServer) {
+      return buildFallback<T>(path);
+    }
+
+    throw networkError;
+  }
 
   if (response.status === 204) {
     return undefined as T;
@@ -95,8 +124,6 @@ export async function apiFetch<T>(
         message?: string;
         fields?: Record<string, string>;
       };
-      // FastAPI request-validation errors (422) return `detail` as an array of
-      // { loc, msg, type }; require_admin returns it as a plain string.
       detail?: string | Array<{ msg?: string; loc?: Array<string | number> }>;
     };
 
