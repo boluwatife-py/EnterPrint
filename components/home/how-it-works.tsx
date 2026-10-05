@@ -38,15 +38,12 @@ export function HowItWorks() {
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, i) => (
-            <div key={step.title} className="relative rounded-sm border border-border bg-card p-6">
-              <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <step.icon className="h-5 w-5" />
-              </span>
+            <div key={step.title} className="relative border border-border bg-card p-6">
               <span className="absolute right-5 top-5 font-serif text-3xl font-semibold text-border">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="mt-4 font-semibold text-foreground">{step.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
+              <p className="mt-2 leading-relaxed text-muted-foreground">{step.description}</p>
             </div>
           ))}
         </div>

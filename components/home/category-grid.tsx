@@ -27,7 +27,7 @@ export async function CategoryGrid() {
       <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <h2 className="text-balance font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
-            Everything you print, in one place
+            Everything you print
           </h2>
         </div>
         <Link

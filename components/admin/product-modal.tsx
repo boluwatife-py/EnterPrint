@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { X, Trash2, Image as ImageIcon } from "lucide-react";
+import { useRef } from "react";
+import {
+  X,
+  Trash2,
+  Image as ImageIcon,
+  Star,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,13 +35,83 @@ import {
   type QuantityTier,
 } from "@/lib/api/admin";
 
+export const MAX_IMAGES = 8;
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+/** One image in the product gallery as edited in the form. */
+export interface ProductImageForm {
+  key: string; // stable React key
+  url: string; // server URL ("" until a new file has been uploaded)
+  previewUrl: string; // what the <img> shows (server URL or blob: URL)
+  altText: string;
+  isPrimary: boolean;
+  file?: File; // set only for images picked but not yet uploaded
+}
+
+interface ApiProductImage {
+  url: string;
+  altText?: string | null;
+  isPrimary?: boolean;
+  displayOrder?: number;
+}
+
+const newKey = () => Math.random().toString(36).slice(2);
+
+/** Guarantee exactly one primary image (the first one if none is flagged). */
+export function normalizeImages(
+  images: ProductImageForm[],
+): ProductImageForm[] {
+  if (images.length === 0) return images;
+  const idx = Math.max(
+    0,
+    images.findIndex((i) => i.isPrimary),
+  );
+  return images.map((img, n) => ({ ...img, isPrimary: n === idx }));
+}
+
+/** Free blob: URLs created for not-yet-uploaded files. */
+export function revokeImagePreviews(images: ProductImageForm[]) {
+  images.forEach((i) => {
+    if (i.previewUrl.startsWith("blob:")) URL.revokeObjectURL(i.previewUrl);
+  });
+}
+
+/** Build form images from an API product (falls back to the single `image`). */
+export function toImageForms(p: {
+  images?: ApiProductImage[] | null;
+  image?: string | null;
+}): ProductImageForm[] {
+  const fromApi = [...(p.images ?? [])]
+    .sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0))
+    .map((i) => ({
+      key: newKey(),
+      url: i.url,
+      previewUrl: i.url,
+      altText: i.altText ?? "",
+      isPrimary: !!i.isPrimary,
+    }));
+  if (fromApi.length) return normalizeImages(fromApi);
+  if (p.image) {
+    return [
+      {
+        key: newKey(),
+        url: p.image,
+        previewUrl: p.image,
+        altText: "",
+        isPrimary: true,
+      },
+    ];
+  }
+  return [];
+}
+
 export interface ProductFormState {
   slug: string;
   name: string;
   categorySlug: string;
   tagline: string;
   description: string;
-  image: string;
+  images: ProductImageForm[];
   basePrice: number;
   turnaroundDays: number;
   popular: boolean;
@@ -46,7 +125,7 @@ export interface ProductFormState {
 interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (e: React.FormEvent, imageFile: File | null) => void;
+  onSubmit: (e: React.FormEvent) => void | Promise<void>;
   onDelete: () => void;
   editingId: string | null;
   submitting: boolean;
@@ -68,44 +147,75 @@ export function ProductModal({
   setForm,
   categories,
 }: ProductModalProps) {
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (form.image) {
-      setPreviewUrl(form.image);
-    } else {
-      setPreviewUrl("");
-    }
-    setImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  }, [form.image, isOpen]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImageFile(file);
-    const localUrl = URL.createObjectURL(file);
-    setPreviewUrl(localUrl);
-  };
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setPreviewUrl("");
-    setForm({ ...form, image: "" });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(e, imageFile);
+    onSubmit(e);
   };
+
+  // --- Image Gallery Handlers ---
+  const setImages = (images: ProductImageForm[]) =>
+    setForm({ ...form, images: normalizeImages(images) });
+
+  const handleFilesSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = ""; // allow re-selecting the same file later
+    if (files.length === 0) return;
+
+    const slots = MAX_IMAGES - form.images.length;
+    if (slots <= 0) {
+      toast.error(`You can add up to ${MAX_IMAGES} images per product.`);
+      return;
+    }
+
+    const accepted: ProductImageForm[] = [];
+    for (const file of files) {
+      if (accepted.length >= slots) {
+        toast.error(`Only ${MAX_IMAGES} images allowed; extra files skipped.`);
+        break;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        toast.error(`${file.name} is larger than 5MB and was skipped.`);
+        continue;
+      }
+      accepted.push({
+        key: newKey(),
+        url: "",
+        previewUrl: URL.createObjectURL(file),
+        altText: "",
+        isPrimary: false,
+        file,
+      });
+    }
+    if (accepted.length) setImages([...form.images, ...accepted]);
+  };
+
+  const removeImage = (index: number) => {
+    const target = form.images[index];
+    if (target.previewUrl.startsWith("blob:")) {
+      URL.revokeObjectURL(target.previewUrl);
+    }
+    setImages(form.images.filter((_, n) => n !== index));
+  };
+
+  const makePrimary = (index: number) =>
+    setImages(
+      form.images.map((img, n) => ({ ...img, isPrimary: n === index })),
+    );
+
+  const moveImage = (index: number, dir: -1 | 1) => {
+    const to = index + dir;
+    if (to < 0 || to >= form.images.length) return;
+    const next = [...form.images];
+    [next[index], next[to]] = [next[to], next[index]];
+    setImages(next);
+  };
+
+  const updateImageAlt = (index: number, altText: string) =>
+    setImages(
+      form.images.map((img, n) => (n === index ? { ...img, altText } : img)),
+    );
 
   // --- Option Group State Handlers ---
   const addOptionGroup = () => {
@@ -324,56 +434,135 @@ export function ProductModal({
             {/* Section: Image & Status */}
             <div className="space-y-4 pt-4 border-t border-border">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Image & Visibility
+                Images & Visibility
               </h3>
 
-              <div className="space-y-2">
-                <label className="block text-xs font-medium text-foreground">
-                  Product Image
-                </label>
-                <div className="flex items-center gap-4 p-3 rounded-lg border border-border bg-secondary/20">
-                  {previewUrl ? (
-                    <div className="relative h-16 w-16 rounded-md overflow-hidden border border-border bg-secondary flex items-center justify-center shrink-0">
-                      <img
-                        src={previewUrl}
-                        alt="Product preview"
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-destructive transition-colors"
-                        title="Remove image"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="h-16 w-16 rounded-md border border-dashed border-border bg-secondary/50 flex flex-col items-center justify-center text-muted-foreground shrink-0">
-                      <ImageIcon className="h-5 w-5 mb-0.5 opacity-50" />
-                      <span className="text-[9px]">No Image</span>
-                    </div>
-                  )}
-
-                  <div className="flex-1 space-y-1.5">
-                    <Input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png, image/jpeg, image/webp, image/gif"
-                      onChange={handleImageChange}
-                      className="cursor-pointer text-xs file:mr-3 file:py-1 file:px-2.5 file:rounded file:border-0 file:text-xs file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-                    />
-                    <p className="text-[11px] text-muted-foreground">
-                      {imageFile ? (
-                        <span className="text-primary font-medium">
-                          Selected: {imageFile.name}
-                        </span>
-                      ) : (
-                        "Upload image (PNG, JPEG, WEBP, GIF, max 5MB)."
-                      )}
-                    </p>
-                  </div>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-medium text-foreground">
+                    Product Images{" "}
+                    <span className="text-muted-foreground font-normal">
+                      ({form.images.length}/{MAX_IMAGES})
+                    </span>
+                  </label>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={form.images.length >= MAX_IMAGES}
+                  >
+                    <Plus className="mr-1 h-3.5 w-3.5" />
+                    Add images
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    accept="image/png, image/jpeg, image/webp, image/gif"
+                    onChange={handleFilesSelected}
+                    className="hidden"
+                  />
                 </div>
+
+                {form.images.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full h-28 rounded-lg border border-dashed border-border bg-secondary/30 flex flex-col items-center justify-center text-muted-foreground hover:bg-secondary/50 transition-colors"
+                  >
+                    <ImageIcon className="h-6 w-6 mb-1 opacity-50" />
+                    <span className="text-xs">
+                      Click to upload (PNG, JPEG, WEBP, GIF, max 5MB each)
+                    </span>
+                  </button>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {form.images.map((img, index) => (
+                      <div
+                        key={img.key}
+                        className={`rounded-lg border bg-secondary/20 p-2 space-y-2 ${
+                          img.isPrimary ? "border-primary" : "border-border"
+                        }`}
+                      >
+                        <div className="relative aspect-square rounded-md overflow-hidden bg-secondary">
+                          <img
+                            src={img.previewUrl}
+                            alt={img.altText || `Product image ${index + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                          {img.isPrimary && (
+                            <span className="absolute left-1 top-1 rounded bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                              Primary
+                            </span>
+                          )}
+                          {img.file && (
+                            <span className="absolute left-1 bottom-1 rounded bg-black/70 px-1.5 py-0.5 text-[10px] text-white">
+                              New
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-black/70 text-white rounded-full p-1 hover:bg-destructive transition-colors"
+                            title="Remove image"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </div>
+
+                        <Input
+                          value={img.altText}
+                          onChange={(e) =>
+                            updateImageAlt(index, e.target.value)
+                          }
+                          placeholder="Alt text (optional)"
+                          className="h-8 text-xs"
+                        />
+
+                        <div className="flex items-center justify-between">
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moveImage(index, -1)}
+                              disabled={index === 0}
+                              className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                              title="Move earlier"
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveImage(index, 1)}
+                              disabled={index === form.images.length - 1}
+                              className="p-1 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                              title="Move later"
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => makePrimary(index)}
+                            disabled={img.isPrimary}
+                            className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-primary disabled:text-primary"
+                            title="Use as the main product image"
+                          >
+                            <Star
+                              className={`h-3.5 w-3.5 ${img.isPrimary ? "fill-current" : ""}`}
+                            />
+                            {img.isPrimary ? "Main" : "Set main"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[11px] text-muted-foreground">
+                  The main image is shown in listings. Order here is the order
+                  customers see them in.
+                </p>
               </div>
 
               <div className="flex flex-wrap gap-6 pt-1">

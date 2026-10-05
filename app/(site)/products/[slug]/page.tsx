@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import Image from "next/image";
 import { Star, Check, ChevronRight } from "lucide-react";
 
 import {
@@ -14,6 +13,7 @@ import {
 
 import { ProductCustomizer } from "@/components/product/product-customizer";
 import { RelatedProducts } from "@/components/product/related-products";
+import { ProductImageGallery } from "@/components/product/product-image-gallery"; // <-- Import gallery
 import { Badge } from "@/components/ui/badge";
 
 export async function generateMetadata({
@@ -22,7 +22,6 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-
   const product = await getProduct(slug);
 
   return {
@@ -30,6 +29,7 @@ export async function generateMetadata({
     description: product.tagline ?? product.description ?? undefined,
   };
 }
+
 export default async function ProductPage({
   params,
 }: {
@@ -38,7 +38,6 @@ export default async function ProductPage({
   const { slug } = await params;
 
   let product;
-
   try {
     product = await getProduct(slug);
   } catch {
@@ -51,6 +50,7 @@ export default async function ProductPage({
   const related = (await getProductsByCategory(product.categorySlug)).filter(
     (p) => p.slug !== product.slug,
   );
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       {/* Breadcrumb */}
@@ -78,50 +78,28 @@ export default async function ProductPage({
 
       {/* Overview */}
       <div className="mt-6 grid gap-8 lg:grid-cols-2">
-        <div className="overflow-hidden rounded-2xl border border-border bg-secondary">
-          <div className="relative aspect-square">
-            <Image
-              src={product.image || "/placeholder.svg"}
-              alt={product.name}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover"
-            />
-            {product.popular && (
-              <Badge className="absolute left-4 top-4 bg-accent text-accent-foreground">
-                Popular
-              </Badge>
-            )}
-          </div>
-        </div>
+        {/* Interactive Image Gallery */}
+        <ProductImageGallery
+          images={product.images}
+          fallbackImage={product.image}
+          productName={product.name}
+          popular={product.popular}
+        />
 
         <div>
-          <div className="flex flex-wrap gap-2">
+          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
+            {product.name}
+          </h1>
+          <p className="text-muted-foreground leading-relaxed">
+            {product.description}
+          </p>
+          <div className="flex flex-wrap gap-2 mt-2">
             {product.tags.map((tag) => (
               <Badge key={tag} variant="secondary" className="rounded-full">
                 {tag}
               </Badge>
             ))}
           </div>
-          <h1 className="mt-3 text-3xl font-bold tracking-tight text-foreground text-balance sm:text-4xl">
-            {product.name}
-          </h1>
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            <span className="flex items-center gap-1">
-              <Star className="h-4 w-4 fill-accent text-accent" />
-              <span className="font-medium text-foreground">
-                {product.rating}
-              </span>
-            </span>
-            <span className="text-muted-foreground">
-              ({product.reviews} reviews)
-            </span>
-          </div>
-          <p className="mt-4 text-muted-foreground leading-relaxed">
-            {product.description}
-          </p>
-
           <ul className="mt-6 grid gap-2 sm:grid-cols-2">
             {product.features.map((f) => (
               <li
