@@ -28,6 +28,9 @@ import { formatNaira } from "@/lib/utils/format";
 import { toast } from "sonner";
 import {
   ProductModal,
+  normalizeImages,
+  revokeImagePreviews,
+  toImageForms,
   type ProductFormState,
 } from "@/components/admin/product-modal";
 
@@ -56,7 +59,7 @@ export default function AdminProductsPage() {
     categorySlug: "",
     tagline: "",
     description: "",
-    image: "",
+    images: [],
     basePrice: 0,
     turnaroundDays: 7,
     popular: false,
@@ -96,7 +99,7 @@ export default function AdminProductsPage() {
       categorySlug: categories[0]?.slug || "",
       tagline: "",
       description: "",
-      image: "",
+      images: [],
       basePrice: 0,
       turnaroundDays: 7,
       popular: false,
@@ -117,7 +120,7 @@ export default function AdminProductsPage() {
       categorySlug: p.categorySlug,
       tagline: p.tagline || "",
       description: p.description || "",
-      image: p.image || "",
+      images: toImageForms(p),
       basePrice: p.basePrice,
       turnaroundDays: p.turnaroundDays,
       popular: p.popular,
@@ -130,21 +133,43 @@ export default function AdminProductsPage() {
     setIsModalOpen(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent, imageFile: File | null) => {
+  const closeModal = () => {
+    revokeImagePreviews(form.images);
+    setIsModalOpen(false);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!accessToken) return;
     setSubmitting(true);
     try {
-      let imageUrl = form.image;
-
-      if (imageFile) {
-        const uploadRes = await uploadAdminImage(accessToken, imageFile);
-        imageUrl = uploadRes.url;
+      // 1) Upload newly picked files, one by one, keeping gallery order.
+      //    Form state is updated after each upload so a failed save can be
+      //    retried without re-uploading files that already succeeded.
+      const images = [...form.images];
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        if (!img.file) continue;
+        const uploadRes = await uploadAdminImage(accessToken, img.file);
+        revokeImagePreviews([img]);
+        images[i] = {
+          ...img,
+          url: uploadRes.url,
+          previewUrl: uploadRes.url,
+          file: undefined,
+        };
+        setForm((f) => ({ ...f, images: [...images] }));
       }
 
+      // 2) Send the gallery; array order becomes display order.
+      const { images: _formImages, ...rest } = form;
       const payload = {
-        ...form,
-        image: imageUrl,
+        ...rest,
+        images: normalizeImages(images).map((img) => ({
+          url: img.url,
+          altText: img.altText.trim() || null,
+          isPrimary: img.isPrimary,
+        })),
       };
 
       if (editingId) {
@@ -173,7 +198,7 @@ export default function AdminProductsPage() {
     try {
       await deleteAdminProduct(accessToken, editingId);
       toast.success("Product deleted.");
-      setIsModalOpen(false);
+      closeModal();
       loadData();
     } catch (err) {
       toast.error("Failed to delete product.");
@@ -481,7 +506,7 @@ export default function AdminProductsPage() {
       {/* Extracted Modal Component */}
       <ProductModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeModal}
         onSubmit={handleSubmit}
         onDelete={handleDelete}
         editingId={editingId}

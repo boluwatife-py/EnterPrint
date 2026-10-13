@@ -36,6 +36,14 @@ export type Category = {
   icon: string;
 };
 
+export type ProductImage = {
+  id?: string;
+  url: string;
+  altText?: string | null;
+  displayOrder?: number;
+  isPrimary: boolean;
+};
+
 export type Product = {
   id: string;
   slug: string;
@@ -44,6 +52,7 @@ export type Product = {
   tagline: string;
   description: string;
   image: string;
+  images: ProductImage[]; // <-- Added multi-image array
   basePrice: number;
   rating: number;
   reviews: number;

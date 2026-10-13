@@ -32,7 +32,7 @@ export default async function HomePage() {
             </Link>
           </div>
 
-          <div className="mt-10 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="mt-10 grid grid-cols-2 gap-2 sm:gap-4 md:grid-cols-4">
             {popular.map((product) => (
               <ProductCard
                 key={product.id}
